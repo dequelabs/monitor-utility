@@ -40,8 +40,11 @@ const calculateCompletionTime = () => {
 let urls;
 
 module.exports = async (answers) => {
-  const { username, password, date, type, url } = answers;
-
+  let { username, password, date, type, url } = answers;
+  // Remove trailing slash from URL that causes issues
+  if (url.charAt(url.length - 1) == "/") {
+    url = url.substring(0, url.length - 1);
+  }
   let month, year;
   if (date) {
     month = date.split("/")[0];
