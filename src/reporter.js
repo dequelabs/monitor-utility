@@ -75,6 +75,11 @@ module.exports = async (answers) => {
         }
         try {
           projects[url] = await getProjectIds(url, username, password);
+          if (projects[url].length === 0) {
+            errors.push(
+              `No favorited projects were found at Axe Monitor URL - ${url}`
+            );
+          }
         } catch (err) {
           errors.push(err);
         }
