@@ -11,8 +11,8 @@
     "type": "git",
     "url": "git+https://github.com/dequelabs/monitor-reporter-cli.git"
   },
-  "author": "Chris Rodriguez <chris.rodriguez@deque.com>",
-  "license": "UNLICENSED",
+  "author": "Dev Services <devservices@deque.com>",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/dequelabs/monitor-reporter-cli/issues"
   },
