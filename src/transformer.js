@@ -1,18 +1,5 @@
 const sha1 = require("sha1");
 
-const calculateScore = (scoreObject) => {
-  const { minor, moderate, serious, critical, total } = scoreObject;
-  if (minor == "0" && moderate == "0" && serious == "0" && critical == "0") {
-    return "100";
-  }
-  return (
-    (40 * parseInt(serious, 10) +
-      80 * parseInt(moderate, 10) +
-      100 * parseInt(minor, 10)) /
-    parseInt(total, 10)
-  ).toFixed(3);
-};
-
 module.exports = {
   report: async (results) => {
     return new Promise((resolve) => {
@@ -41,13 +28,10 @@ module.exports = {
           "Shared Report URL": shareUrl,
           "Total Pages": result.report.report.totalPages,
           "Total Issues": getTotal(),
-          "Raw Data %": calculateScore({
-            minor: result.report.report.good.toString(),
-            moderate: result.report.report.fair.toString(),
-            serious: result.report.report.serious.toString(),
-            critical: result.report.report.critical.toString(),
-            total: result.report.report.totalPages.toString(),
-          }),
+          "Minor Issues": result.report.report.good.toString(),
+          "Moderate Issues": result.report.report.fair.toString(),
+          "Serious Issues": result.report.report.serious.toString(),
+          "Critical Issues": result.report.report.critical.toString(),
           ARIA: getTotal("Aria"),
           Color: getTotal("Color"),
           Forms: getTotal("Forms"),
