@@ -22,7 +22,6 @@ module.exports = {
           });
           return issues;
         };
-
         transformedResults.push({
           Site: result.report.report.name,
           "Shared Report URL": shareUrl,
@@ -32,6 +31,7 @@ module.exports = {
           "Moderate Issues": result.report.report.fair.toString(),
           "Serious Issues": result.report.report.serious.toString(),
           "Critical Issues": result.report.report.critical.toString(),
+          "Accessibility Score": result.result.score.toString(),
           ARIA: getTotal("Aria"),
           Color: getTotal("Color"),
           Forms: getTotal("Forms"),
