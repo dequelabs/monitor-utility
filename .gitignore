@@ -1,0 +1,9 @@
+node_modules
+bins
+report.json
+report.xlsx
+raw.json
+monthly.json
+.DS_Store
+.vscode
+~$report.xlsx
