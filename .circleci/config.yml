@@ -1,0 +1,9 @@
+version: 2.1
+orbs:
+  prettier: arrai/prettier@3.0.1
+workflows:
+  version: null
+  lint:
+    jobs:
+      - prettier/code_style:
+          wd: ~/

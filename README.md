@@ -13,4 +13,5 @@ To run the code, from the root run `npm run report`. Enter the Monitor URL, maki
 The script begins in `index.js`, which prompts the user for all input information and verifies URL and date format. After prompting, it calls `reporter.js`. It checks that a username and password were provided, and begins fetching results by first getting the project IDs in `getProjectIds.js` from the `/worldspace/organizationprojects` endpoint of the Monitor 6.7 API. Once the projects are identified, it continues in the reporter and uses the IDs to gather details (`/worldspace/projects/details/${project.id}`) and summary reports (`/worldspace/project/summaryReport/${project.id}`) for each project. After all requests are completed, it compiles the data in `transformer.js`. It then continues in the reporter to write the file and calculate completion time.
 
 ## Modifying the output
+
 To modify what in output in the csv update the results that are pushed inside the `transformer.js` file.
