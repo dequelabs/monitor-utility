@@ -25,7 +25,7 @@ inquirer
     {
       type: "input",
       name: "url",
-      message: "Enter Axe Monitor URL:",
+      message: "Enter Axe Monitor URL (do not add anything after .com):",
       validate: (input) => {
         return new Promise((resolve, reject) => {
           if (
