@@ -40,9 +40,7 @@ module.exports = {
           "Accessibility Score": result.report.report.score.toString(),
           "Total Pages Tested": result.report.report.totalPages,
           "% of pages with no errors found":
-            ((result.report.report.good) /
-              result.report.report.totalPages) *
-            100,
+            (result.report.report.good / result.report.report.totalPages) * 100,
           "Good Pages": result.report.report.good.toString(),
           "Moderate Pages": result.report.report.fair.toString(),
           "Serious Pages": result.report.report.serious.toString(),
