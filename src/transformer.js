@@ -11,69 +11,43 @@ module.exports = {
         const shareHash = sha1(`${pid}${xor}`);
         const shareUrl = `${result.server}/worldspace/organizationProject/summary/${pid}?share=${shareHash}`;
 
-        const getTotalForGroupsAndPriorities = (dict) => {
+        const getTotal = (group) => {
           let issues = 0;
           result.report.report.issuelist.forEach((issue) => {
-            if (issue.issuegrouping) {
-              if (dict[issue.issuegrouping]) {
-                dict[issue.issuegrouping] =
-                  dict[issue.issuegrouping] + issue.issues;
-              } else {
-                dict[issue.issuegrouping] = issue.issues;
-              }
-            }
-            if (issue.priority) {
-              if (dict[issue.priority]) {
-                dict[issue.priority] = dict[issue.priority] + issue.issues;
-              } else {
-                dict[issue.priority] = issue.issues;
-              }
+            if (!group) {
+              issues = issues + issue.issues;
+            } else if (issue.issuegrouping === group) {
+              issues = issues + issue.issues;
             }
           });
-          return dict;
+          return issues;
         };
-        let groupingAndPriorityToIssueCountDict =
-          getTotalForGroupsAndPriorities({});
-        let transformedResult = {
+        transformedResults.push({
           Site: result.report.report.name,
           "Shared Report URL": shareUrl,
+          "Total Pages": result.report.report.totalPages,
+          "Total Issues": getTotal(),
+          "Minor Issues": result.report.report.good.toString(),
+          "Moderate Issues": result.report.report.fair.toString(),
+          "Serious Issues": result.report.report.serious.toString(),
+          "Critical Issues": result.report.report.critical.toString(),
           "Accessibility Score": result.report.report.score.toString(),
-          "Total Pages Tested": result.report.report.totalPages,
-          "% of pages with no errors found":
-            (result.report.report.good / result.report.report.totalPages) * 100,
-          "Good Pages": result.report.report.good.toString(),
-          "Moderate Pages": result.report.report.fair.toString(),
-          "Serious Pages": result.report.report.serious.toString(),
-          "Critical Pages": result.report.report.critical.toString(),
-          "Average # of errors per page":
-            result.report.report.issuesPerPage.toString(),
-          "Total Critical Issues":
-            groupingAndPriorityToIssueCountDict["Critical"],
-          "Total Serious Issues":
-            groupingAndPriorityToIssueCountDict["Serious"],
-          "Total Moderate Issues":
-            groupingAndPriorityToIssueCountDict["Moderate"],
-          "Total Minor Issues": groupingAndPriorityToIssueCountDict["Minor"],
-          ARIA: groupingAndPriorityToIssueCountDict["Aria"],
-          Color: groupingAndPriorityToIssueCountDict["Color"],
-          Forms: groupingAndPriorityToIssueCountDict["Forms"],
-          Keyboard: groupingAndPriorityToIssueCountDict["Keyboard"],
-          Language: groupingAndPriorityToIssueCountDict["Language"],
-          Media: groupingAndPriorityToIssueCountDict["Media"],
-          "Name Role Value":
-            groupingAndPriorityToIssueCountDict["Name Role Value"],
-          Parsing: groupingAndPriorityToIssueCountDict["Parsing"],
-          PDF: groupingAndPriorityToIssueCountDict["PDF"],
-          Semantics: groupingAndPriorityToIssueCountDict["Semantics"],
-          "Sensory and Visual Cues":
-            groupingAndPriorityToIssueCountDict["Sensory And Visual Cues"],
-          Structure: groupingAndPriorityToIssueCountDict["Structure"],
-          Tables: groupingAndPriorityToIssueCountDict["Tables"],
-          "Text Alternatives":
-            groupingAndPriorityToIssueCountDict["Text Alternatives"],
-          Time: groupingAndPriorityToIssueCountDict["Time"],
-        };
-        transformedResults.push(transformedResult);
+          ARIA: getTotal("Aria"),
+          Color: getTotal("Color"),
+          Forms: getTotal("Forms"),
+          Keyboard: getTotal("Keyboard"),
+          Language: getTotal("Language"),
+          Media: getTotal("Media"),
+          "Name Role Value": getTotal("Name Role Value"),
+          Parsing: getTotal("Parsing"),
+          PDF: getTotal("Pdfwcag"),
+          Semantics: getTotal("Semantics"),
+          "Sensory and Visual Cues": getTotal("Sensory And Visual Cues"),
+          Structure: getTotal("Structure"),
+          Tables: getTotal("Tables"),
+          "Text Alternatives": getTotal("Text Alternatives"),
+          Time: getTotal("Time"),
+        });
       });
 
       resolve(transformedResults);

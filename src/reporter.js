@@ -164,7 +164,7 @@ module.exports = async (answers) => {
         }
         if (result.value) {
           results.push(result.value);
-        }
+        } 
       });
     })
   );
