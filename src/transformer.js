@@ -11,49 +11,27 @@ module.exports = {
         const shareHash = sha1(`${pid}${xor}`);
         const shareUrl = `${result.server}/worldspace/organizationProject/summary/${pid}?share=${shareHash}`;
 
-        const getTotalForGroupsAndPriorities = (dict) => {
+        const getTotal = (group) => {
           let issues = 0;
           result.report.report.issuelist.forEach((issue) => {
-            if (issue.issuegrouping) {
-              if (dict[issue.issuegrouping]) {
-                dict[issue.issuegrouping] =
-                  dict[issue.issuegrouping] + issue.issues;
-              } else {
-                dict[issue.issuegrouping] = issue.issues;
-              }
-            }
-            if (issue.priority) {
-              if (dict[issue.priority]) {
-                dict[issue.priority] = dict[issue.priority] + issue.issues;
-              } else {
-                dict[issue.priority] = issue.issues;
-              }
+            if (!group) {
+              issues = issues + issue.issues;
+            } else if (issue.issuegrouping === group) {
+              issues = issues + issue.issues;
             }
           });
-          return dict;
+          return issues;
         };
-        let groupingAndPriorityToIssueCountDict =
-          getTotalForGroupsAndPriorities({});
-        let transformedResult = {
+        transformedResults.push({
           Site: result.report.report.name,
           "Shared Report URL": shareUrl,
+          "Total Pages": result.report.report.totalPages,
+          "Total Issues": getTotal(),
+          "Minor Issues": result.report.report.good.toString(),
+          "Moderate Issues": result.report.report.fair.toString(),
+          "Serious Issues": result.report.report.serious.toString(),
+          "Critical Issues": result.report.report.critical.toString(),
           "Accessibility Score": result.report.report.score.toString(),
-          "Total Pages Tested": result.report.report.totalPages,
-          "% of pages with no errors found":
-            (result.report.report.good / result.report.report.totalPages) * 100,
-          "Good Pages": result.report.report.good.toString(),
-          "Moderate Pages": result.report.report.fair.toString(),
-          "Serious Pages": result.report.report.serious.toString(),
-          "Critical Pages": result.report.report.critical.toString(),
-          "Average # of errors per page":
-            result.report.report.issuesPerPage.toString(),
-          "Total Critical Issues":
-            groupingAndPriorityToIssueCountDict["Critical"],
-          "Total Serious Issues":
-            groupingAndPriorityToIssueCountDict["Serious"],
-          "Total Moderate Issues":
-            groupingAndPriorityToIssueCountDict["Moderate"],
-          "Total Minor Issues": groupingAndPriorityToIssueCountDict["Minor"],
           ARIA: getTotal("Aria"),
           Color: getTotal("Color"),
           Forms: getTotal("Forms"),
