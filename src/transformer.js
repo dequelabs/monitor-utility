@@ -54,26 +54,22 @@ module.exports = {
           "Total Moderate Issues":
             groupingAndPriorityToIssueCountDict["Moderate"],
           "Total Minor Issues": groupingAndPriorityToIssueCountDict["Minor"],
-          ARIA: groupingAndPriorityToIssueCountDict["Aria"],
-          Color: groupingAndPriorityToIssueCountDict["Color"],
-          Forms: groupingAndPriorityToIssueCountDict["Forms"],
-          Keyboard: groupingAndPriorityToIssueCountDict["Keyboard"],
-          Language: groupingAndPriorityToIssueCountDict["Language"],
-          Media: groupingAndPriorityToIssueCountDict["Media"],
-          "Name Role Value":
-            groupingAndPriorityToIssueCountDict["Name Role Value"],
-          Parsing: groupingAndPriorityToIssueCountDict["Parsing"],
-          PDF: groupingAndPriorityToIssueCountDict["PDF"],
-          Semantics: groupingAndPriorityToIssueCountDict["Semantics"],
-          "Sensory and Visual Cues":
-            groupingAndPriorityToIssueCountDict["Sensory And Visual Cues"],
-          Structure: groupingAndPriorityToIssueCountDict["Structure"],
-          Tables: groupingAndPriorityToIssueCountDict["Tables"],
-          "Text Alternatives":
-            groupingAndPriorityToIssueCountDict["Text Alternatives"],
-          Time: groupingAndPriorityToIssueCountDict["Time"],
-        };
-        transformedResults.push(transformedResult);
+          ARIA: getTotal("Aria"),
+          Color: getTotal("Color"),
+          Forms: getTotal("Forms"),
+          Keyboard: getTotal("Keyboard"),
+          Language: getTotal("Language"),
+          Media: getTotal("Media"),
+          "Name Role Value": getTotal("Name Role Value"),
+          Parsing: getTotal("Parsing"),
+          PDF: getTotal("Pdfwcag"),
+          Semantics: getTotal("Semantics"),
+          "Sensory and Visual Cues": getTotal("Sensory And Visual Cues"),
+          Structure: getTotal("Structure"),
+          Tables: getTotal("Tables"),
+          "Text Alternatives": getTotal("Text Alternatives"),
+          Time: getTotal("Time"),
+        });
       });
 
       resolve(transformedResults);
