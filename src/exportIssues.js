@@ -2,10 +2,12 @@ const axios = require("axios");
 const { count } = require("console");
 const https = require("https");
 var fs = require("fs");
-
+// Used for accessing Axe Monitor
 const agent = new https.Agent({
   rejectUnauthorized: false,
 });
+
+// Iteratively get all issues for the relevant project in increments of 15000
 async function getIssues(data) {
   let totalIssues = [];
   let countOfIssues = 15000;
@@ -30,6 +32,7 @@ async function getIssues(data) {
   return totalIssues;
 }
 
+// Iterate over the array of flattened objects to convert them to a CSV.
 function convertJsonArrayToCSV(arr) {
   if (!arr || !arr.length) {
     return;
@@ -63,6 +66,7 @@ function convertJsonArrayToCSV(arr) {
       .join("\n");
   return csvContent;
 }
+// Flatten a singular JSON object
 function flattenJSON(obj = {}, res = {}, extraKey = "") {
   for (key in obj) {
     if (typeof obj[key] !== "object") {
@@ -73,7 +77,7 @@ function flattenJSON(obj = {}, res = {}, extraKey = "") {
   }
   return res;
 }
-
+// Write all of the gathered issues to a JSON file and a CSV file.
 async function writeIssues(issues) {
   var json = JSON.stringify(issues);
 
@@ -99,6 +103,7 @@ async function writeIssues(issues) {
   });
 }
 module.exports = async (answers) => {
+  // Extract the credentials and data passed to inquirer
   let url = answers.url;
   let username = answers.username;
   let password = answers.password;
@@ -114,6 +119,8 @@ module.exports = async (answers) => {
       password,
     },
   };
+  // Get all issues for the relevent project with the specified id
   let issues = await getIssues(data);
+  // Write the issues to files
   writeIssues(issues);
 };
