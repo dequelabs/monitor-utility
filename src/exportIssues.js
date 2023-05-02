@@ -2,6 +2,7 @@ const axios = require("axios");
 const { count } = require("console");
 const https = require("https");
 var fs = require("fs");
+
 const agent = new https.Agent({
   rejectUnauthorized: false,
 });
@@ -9,6 +10,7 @@ async function getIssues(data) {
   let totalIssues = [];
   let countOfIssues = 15000;
   let offsetMultipler = 0;
+  console.log("Getting all issues...");
   while (countOfIssues == 15000) {
     data.params.offSet = 15000 * offsetMultipler;
     let results = await axios(data, { httpsAgent: agent })
@@ -22,10 +24,56 @@ async function getIssues(data) {
       });
     totalIssues.push(...results.data.issues);
     countOfIssues = results.data.issues.length;
+    console.log(`Iteration ${offsetMultipler}: found ${countOfIssues} issues`);
     offsetMultipler += 1;
   }
   return totalIssues;
 }
+
+function convertJsonArrayToCSV(arr) {
+  if (!arr || !arr.length) {
+    return;
+  }
+  const separator = ",";
+  let keys = "";
+  // We do arr[1] because arr[0] keys are modified
+  keys = Object.keys(arr[1]);
+  // Add nessecary headers for side table.
+
+  // CSV Generation from https://codeburst.io/export-objects-array-as-csv-using-typescript-643bf4f794d9
+  const csvContent =
+    keys.join(separator) +
+    "\n" +
+    arr
+      .map((row) => {
+        return keys
+          .map((k) => {
+            let cell = row[k] === null || row[k] === undefined ? "" : row[k];
+            cell =
+              cell instanceof Date
+                ? cell.toLocaleString()
+                : cell.toString().replace(/"/g, '""');
+            if (cell.search(/("|,|\n)/g) >= 0) {
+              cell = `"${cell}"`;
+            }
+            return cell;
+          })
+          .join(separator);
+      })
+      .join("\n");
+  return csvContent;
+}
+function flattenJSON(obj = {}, res = {}, extraKey = "") {
+  for (key in obj) {
+    if (typeof obj[key] !== "object") {
+      res[extraKey + key] = obj[key];
+    } else {
+      flattenJSON(obj[key], res, `${extraKey}${key}.`);
+    }
+  }
+  return res;
+}
+
 async function writeIssues(issues) {
   var json = JSON.stringify(issues);
 
@@ -34,7 +82,20 @@ async function writeIssues(issues) {
       console.error(err);
       return;
     }
-    console.log("File has been created");
+    console.log("issues.json has been created");
+  });
+
+  // Flatten the array of issues.
+  for (var i = 0; i < issues.length; i++) {
+    issues[i] = flattenJSON(issues[i]);
+  }
+  let csv = convertJsonArrayToCSV(issues);
+  fs.writeFile("issues.csv", csv, "utf-8", (err) => {
+    if (err) {
+      console.error(err);
+      return;
+    }
+    console.log("issues.csv has been created");
   });
 }
 module.exports = async (answers) => {
