@@ -2,13 +2,13 @@ const axios = require("axios");
 const { count } = require("console");
 const https = require("https");
 var fs = require("fs");
-// Used for accessing Axe Monitor
-const agent = new https.Agent({
-  rejectUnauthorized: false,
-});
 
 // Iteratively get all issues for the relevant project in increments of 15000
 async function getIssues(data) {
+  // Used for accessing Axe Monitor
+  const agent = new https.Agent({
+    rejectUnauthorized: false,
+  });
   let totalIssues = [];
   let countOfIssues = 15000;
   let offsetMultipler = 0;
