@@ -14,14 +14,6 @@ const year = date.getFullYear();
 
 console.log("\nMonitor Reporter CLI\nVersion: " + version);
 
-console.log(`
---------------------------------------------------
-Only projects you have marked as a "favorite" will
-be reported in this tool. You can un/mark projects
-as a "favorite" to include or exclude them.
---------------------------------------------------
-`);
-
 inquirer
   .prompt([
     {
@@ -91,6 +83,13 @@ inquirer
           console.log(error);
         });
     } else {
+      console.log(`
+--------------------------------------------------
+Only projects you have marked as a "favorite" will
+be reported in this tool. You can un/mark projects
+as a "favorite" to include or exclude them.
+--------------------------------------------------
+`);
       inquirer
         .prompt([
           {
