@@ -8,12 +8,14 @@ function correctDataForURL(issues, pageList) {
     let relevantPage = pageList.find(
       (x) => x.page_id === issues[i]["page"]["id"]
     );
-    let temporaryURL = issues[i].url.toString();
-    temporaryURL = temporaryURL.replace("https://www.{0}/", relevantPage.url);
-    temporaryURL = temporaryURL.replace("https://{0}/", relevantPage.url);
-    temporaryURL = temporaryURL.replace("http://www.{0}/", relevantPage.url);
-    temporaryURL = temporaryURL.replace("http://{0}/", relevantPage.url);
-    issues[i].url = temporaryURL;
+    if (relevantPage?.url) {
+      let temporaryURL = issues[i].url.toString();
+      temporaryURL = temporaryURL.replace("https://www.{0}/", relevantPage.url);
+      temporaryURL = temporaryURL.replace("https://{0}/", relevantPage.url);
+      temporaryURL = temporaryURL.replace("http://www.{0}/", relevantPage.url);
+      temporaryURL = temporaryURL.replace("http://{0}/", relevantPage.url);
+      issues[i].url = temporaryURL;
+    }
   }
   return issues;
 }
@@ -37,7 +39,6 @@ async function getIssues(data, agent) {
   let totalIssues = [];
   let countOfIssues = 15000;
   let offsetMultipler = 0;
-  console.log("Getting all issues...");
   while (countOfIssues == 15000) {
     data.params.offSet = 15000 * offsetMultipler;
     let results = await axios(data, { httpsAgent: agent })
@@ -111,10 +112,11 @@ async function writeIssues(issues, projectid) {
       console.error(err);
       return;
     }
-    console.log("issues.json has been created");
+    console.log(`issues-${projectid}.json has been created`);
   });
 
   // Flatten the array of issues.
+  console.log(`Flattening data for project ${projectid}...`);
   for (var i = 0; i < issues.length; i++) {
     issues[i] = flattenJSON(issues[i]);
   }
@@ -124,7 +126,7 @@ async function writeIssues(issues, projectid) {
       console.error(err);
       return;
     }
-    console.log("issues.csv has been created");
+    console.log(`issues-${projectid}.csv has been created`);
   });
 }
 module.exports = async (answers) => {
@@ -158,10 +160,16 @@ module.exports = async (answers) => {
     };
     let pageList = await getPages(pageData, agent);
     // Get all issues for the relevent project with the specified id
+    console.log(`Getting all issues for project ${projectid}...`);
+
     let issues = await getIssues(data, agent);
+
     // Update issues with correct URL
+    console.log(`Correcting data for project ${projectid}...`);
     issues = correctDataForURL(issues, pageList);
     // Write the issues to files
+    console.log(`Preparing to ouput data for project ${projectid}...`);
+
     writeIssues(issues, projectid);
   }
 };
