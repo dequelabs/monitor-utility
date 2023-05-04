@@ -2,19 +2,13 @@ const axios = require("axios");
 const { count } = require("console");
 const https = require("https");
 var fs = require("fs");
-const { resourceLimits } = require("worker_threads");
 function correctDataForURL(issues, pageList) {
   for (var i = 0; i < issues.length; i++) {
     let relevantPage = pageList.find(
       (x) => x.page_id === issues[i]["page"]["id"]
     );
     if (relevantPage?.url) {
-      let temporaryURL = issues[i].url.toString();
-      temporaryURL = temporaryURL.replace("https://www.{0}/", relevantPage.url);
-      temporaryURL = temporaryURL.replace("https://{0}/", relevantPage.url);
-      temporaryURL = temporaryURL.replace("http://www.{0}/", relevantPage.url);
-      temporaryURL = temporaryURL.replace("http://{0}/", relevantPage.url);
-      issues[i].url = temporaryURL;
+      issues[i].url = relevantPage.url;
     }
   }
   return issues;
