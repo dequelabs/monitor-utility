@@ -5,7 +5,8 @@ var fs = require("fs");
 
 // Iteratively get all issues for the relevant project in increments of 15000
 async function getIssues(data) {
-  // Used for accessing Axe Monitor
+  const url = data.url;
+  // Used for accessing Axe Monitor'
   const agent = new https.Agent({
     rejectUnauthorized: false,
   });
