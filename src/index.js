@@ -72,7 +72,7 @@ inquirer
             type: "input",
             name: "projectid",
             message:
-              "What is the Project Id (the *** in {Axe Monitor URL}/worldspace/issues/***)?",
+              "What are the Project Ids (the *** in {Axe Monitor URL}/worldspace/issues/*** separated by commas(,))?",
           },
         ])
         .then((answersPartTwo) => {

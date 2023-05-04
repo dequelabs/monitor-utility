@@ -128,7 +128,9 @@ module.exports = async (answers) => {
   let url = answers.url;
   let username = answers.username;
   let password = answers.password;
-  let projectids = answers.projectid.split(",");
+  let projectids = answers.projectid.replaceAll(" ", "");
+  projectids = projectids.split(",");
+
   for (var projectid of projectids) {
     const agent = new https.Agent({
       rejectUnauthorized: false,
