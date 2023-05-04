@@ -2,14 +2,38 @@ const axios = require("axios");
 const { count } = require("console");
 const https = require("https");
 var fs = require("fs");
-
+const { resourceLimits } = require("worker_threads");
+function correctDataForURL(issues, pageList) {
+  for (var i = 0; i < issues.length; i++) {
+    let relevantPage = pageList.find(
+      (x) => x.page_id === issues[i]["page"]["id"]
+    );
+    let temporaryURL = issues[i].url.toString();
+    temporaryURL = temporaryURL.replace("https://www.{0}/", relevantPage.url);
+    temporaryURL = temporaryURL.replace("https://{0}/", relevantPage.url);
+    temporaryURL = temporaryURL.replace("http://www.{0}/", relevantPage.url);
+    temporaryURL = temporaryURL.replace("http://{0}/", relevantPage.url);
+    issues[i].url = temporaryURL;
+  }
+  return issues;
+}
+async function getPages(data, agent) {
+  let results = await axios(data, { httpsAgent: agent })
+    .then((response) => {
+      return response;
+    })
+    .catch((error) => {
+      console.error(
+        `Error: Could not get some projects for you on ${url} ${error}`
+      );
+    });
+  return results.data.pageList;
+}
 // Iteratively get all issues for the relevant project in increments of 15000
-async function getIssues(data) {
+async function getIssues(data, agent) {
   const url = data.url;
   // Used for accessing Axe Monitor'
-  const agent = new https.Agent({
-    rejectUnauthorized: false,
-  });
+
   let totalIssues = [];
   let countOfIssues = 15000;
   let offsetMultipler = 0;
@@ -79,10 +103,10 @@ function flattenJSON(obj = {}, res = {}, extraKey = "") {
   return res;
 }
 // Write all of the gathered issues to a JSON file and a CSV file.
-async function writeIssues(issues) {
+async function writeIssues(issues, projectid) {
   var json = JSON.stringify(issues);
 
-  fs.writeFile("issues.json", json, (err) => {
+  fs.writeFile(`issues-${projectid}.json`, json, (err) => {
     if (err) {
       console.error(err);
       return;
@@ -95,7 +119,7 @@ async function writeIssues(issues) {
     issues[i] = flattenJSON(issues[i]);
   }
   let csv = convertJsonArrayToCSV(issues);
-  fs.writeFile("issues.csv", csv, "utf-8", (err) => {
+  fs.writeFile(`issues-${projectid}.csv`, csv, "utf-8", (err) => {
     if (err) {
       console.error(err);
       return;
@@ -108,20 +132,36 @@ module.exports = async (answers) => {
   let url = answers.url;
   let username = answers.username;
   let password = answers.password;
-  let pageIds = [answers.projectid];
-  const data = {
-    url: `${url}/worldspace/issues/${answers.projectid}`,
-    method: "get",
-    params: {
-      pageSize: 15000,
-    },
-    auth: {
-      username,
-      password,
-    },
-  };
-  // Get all issues for the relevent project with the specified id
-  let issues = await getIssues(data);
-  // Write the issues to files
-  writeIssues(issues);
+  let projectids = answers.projectid.split(",");
+  for (var projectid of projectids) {
+    const agent = new https.Agent({
+      rejectUnauthorized: false,
+    });
+    const pageData = {
+      url: `${url}/worldspace/pages/byProject?projectId=${projectid}`,
+      method: "get",
+      auth: {
+        username,
+        password,
+      },
+    };
+    const data = {
+      url: `${url}/worldspace/issues/${projectid}`,
+      method: "get",
+      params: {
+        pageSize: 15000,
+      },
+      auth: {
+        username,
+        password,
+      },
+    };
+    let pageList = await getPages(pageData, agent);
+    // Get all issues for the relevent project with the specified id
+    let issues = await getIssues(data, agent);
+    // Update issues with correct URL
+    issues = correctDataForURL(issues, pageList);
+    // Write the issues to files
+    writeIssues(issues, projectid);
+  }
 };
