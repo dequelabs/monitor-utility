@@ -14,16 +14,27 @@ function correctDataForURL(issues, pageList) {
   return issues;
 }
 async function getPages(data, agent) {
-  let results = await axios(data, { httpsAgent: agent })
-    .then((response) => {
-      return response;
-    })
-    .catch((error) => {
-      console.error(
-        `Error: Could not get some projects for you on ${url} ${error}`
-      );
-    });
-  return results.data.pageList;
+  let totalPages = [];
+  let countOfPages = 15000;
+  let offsetMultipler = 0;
+  while (countOfPages >= 15000) {
+    data.params.offSet = 15000 * offsetMultipler;
+    let results = await axios(data, { httpsAgent: agent })
+      .then((response) => {
+        return response;
+      })
+      .catch((error) => {
+        console.error(
+          `Error: Could not get some pages for you on ${url} ${error}`
+        );
+      });
+    totalPages.push(...results.data.pageList);
+    countOfPages = results.data.pageList.length;
+    console.log(`Iteration ${offsetMultipler}: found ${countOfPages} pages`);
+    offsetMultipler += 1;
+  }
+
+  return totalPages;
 }
 // Iteratively get all issues for the relevant project in increments of 15000
 async function getIssues(data, agent) {
@@ -138,6 +149,9 @@ module.exports = async (answers) => {
     const pageData = {
       url: `${url}/worldspace/pages/byProject?projectId=${projectid}`,
       method: "get",
+      params: {
+        limit: 15000,
+      },
       auth: {
         username,
         password,
