@@ -9,6 +9,9 @@ module.exports = (url, username, password) => {
   const data = {
     url: `${url}/worldspace/organizationprojects`,
     method: "get",
+    params: {
+      limit: 15000,
+    },
     auth: {
       username,
       password,

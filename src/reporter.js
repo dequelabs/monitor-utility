@@ -81,6 +81,7 @@ module.exports = async (answers) => {
             );
           }
         } catch (err) {
+          console.log("Error getting projects");
           errors.push(err);
         }
       })
@@ -97,7 +98,6 @@ module.exports = async (answers) => {
                 spinner.stop();
                 spinner = new Spinner(`Fetching ${url} ID: ${project.id}`);
                 spinner.start();
-
                 const result = {};
                 axios
                   .get(`${url}/worldspace/projects/details/${project.id}`, {
@@ -105,13 +105,21 @@ module.exports = async (answers) => {
                     httpsAgent: agent,
                   })
                   .then((data) => {
-                    const lastScanDate = format(
-                      parseISO(data.data.project.last_scan_date),
-                      "MM/uu"
-                    );
+                    let lastScanDate = "";
+                    try {
+                      lastScanDate = format(
+                        parseISO(data.data.project.last_scan_date),
+                        "MM/uu"
+                      );
+                    } catch (error) {
+                      // Date beyond any reasonable constraint if the original date does not display as a date
+                      lastScanDate = "01/1990";
+                    }
                     if (date && lastScanDate !== `${month}/${year}`) {
+                      console.log(`Issue with dates for ${project.id}`);
                       resolve(false);
                     }
+
                     result.customAttributes =
                       data.data.project.customAttributes;
                     setTimeout(async () => {
@@ -129,6 +137,11 @@ module.exports = async (answers) => {
                           resolve(result);
                         })
                         .catch((err) => {
+                          console.log("");
+
+                          console.log(
+                            `Failed to get the summary for ${project.id}`
+                          );
                           reject(
                             errors.concat(
                               `Error getting project summaryReport for ${project.id}.`
@@ -138,6 +151,11 @@ module.exports = async (answers) => {
                     }, 100);
                   })
                   .catch((err) => {
+                    console.log("");
+
+                    console.log(err);
+                    console.log("");
+                    console.log(`Error for ${project.id}`);
                     reject(
                       errors.concat(
                         `Error getting project details for ${project.id}.`
@@ -159,12 +177,15 @@ module.exports = async (answers) => {
       const responses = await Promise.allSettled(axiosPromise);
       responses.forEach(async (result) => {
         if (result.status === "rejected") {
+          console.log("");
+          console.log("err result status rejected");
+
           errors.push(result);
           return;
         }
         if (result.value) {
           results.push(result.value);
-        } 
+        }
       });
     })
   );
