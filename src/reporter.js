@@ -111,9 +111,11 @@ module.exports = async (answers) => {
                         parseISO(data.data.project.last_scan_date),
                         "MM/uu"
                       );
+                      result.lastScanDate = data.data.project.last_scan_date;
                     } catch (error) {
                       // Date beyond any reasonable constraint if the original date does not display as a date
                       lastScanDate = "01/1990";
+                      result.lastScanDate = "Not Reported";
                     }
                     if (date && lastScanDate !== `${month}/${year}`) {
                       console.log(`Issue with dates for ${project.id}`);
@@ -134,6 +136,7 @@ module.exports = async (answers) => {
                         .then((res) => {
                           result.server = url;
                           result.report = res.data;
+
                           resolve(result);
                         })
                         .catch((err) => {
