@@ -25,6 +25,7 @@ module.exports = {
         transformedResults.push({
           Site: result.report.report.name,
           "Shared Report URL": shareUrl,
+          Organization: result.org,
           "Total Pages": result.report.report.totalPages,
           "Total Issues": getTotal(),
           "Minor Issues": result.report.report.good.toString(),

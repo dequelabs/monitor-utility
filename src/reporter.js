@@ -106,6 +106,7 @@ module.exports = async (answers) => {
                   })
                   .then((data) => {
                     let lastScanDate = "";
+                    result.org = data.data.project.organizationName;
                     try {
                       lastScanDate = format(
                         parseISO(data.data.project.last_scan_date),
