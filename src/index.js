@@ -10,7 +10,7 @@ const _month = date.getMonth() + 1;
 const month = _month < 10 ? `0${_month}` : _month;
 const year = date.getFullYear();
 
-console.log("\nMonitor Reporter CLI\nVersion: " + version);
+console.log("\nMonitor Utility \nVersion: " + version);
 
 console.log(`
 --------------------------------------------------
