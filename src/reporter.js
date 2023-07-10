@@ -53,7 +53,7 @@ module.exports = async (answers) => {
 
   if (!answers || !username || !password) {
     console.log(
-      "Your Axe Monitor username and password are needed to run this application."
+      "Your Axe Monitor username and password are needed to run this application.",
     );
     console.log("");
     return false;
@@ -77,14 +77,14 @@ module.exports = async (answers) => {
           projects[url] = await getProjectIds(url, username, password);
           if (projects[url].length === 0) {
             errors.push(
-              `No favorited projects were found at Axe Monitor URL - ${url}`
+              `No favorited projects were found at Axe Monitor URL - ${url}`,
             );
           }
         } catch (err) {
           console.log("Error getting projects");
           errors.push(err);
         }
-      })
+      }),
     );
 
   const buildAxeReportsPromises = () => {
@@ -110,7 +110,7 @@ module.exports = async (answers) => {
                     try {
                       lastScanDate = format(
                         parseISO(data.data.project.last_scan_date),
-                        "MM/uu"
+                        "MM/uu",
                       );
                       result.lastScanDate = data.data.project.last_scan_date;
                     } catch (error) {
@@ -132,7 +132,7 @@ module.exports = async (answers) => {
                           {
                             auth: { username, password },
                             httpsAgent: agent,
-                          }
+                          },
                         )
                         .then((res) => {
                           result.server = url;
@@ -144,12 +144,12 @@ module.exports = async (answers) => {
                           console.log("");
 
                           console.log(
-                            `Failed to get the summary for ${project.id}`
+                            `Failed to get the summary for ${project.id}`,
                           );
                           reject(
                             errors.concat(
-                              `Error getting project summaryReport for ${project.id}.`
-                            )
+                              `Error getting project summaryReport for ${project.id}.`,
+                            ),
                           );
                         });
                     }, 100);
@@ -162,13 +162,13 @@ module.exports = async (answers) => {
                     console.log(`Error for ${project.id}`);
                     reject(
                       errors.concat(
-                        `Error getting project details for ${project.id}.`
-                      )
+                        `Error getting project details for ${project.id}.`,
+                      ),
                     );
                   });
-              })
-          )
-        )
+              }),
+          ),
+        ),
       );
     }
     return promiseMatrix;
@@ -191,7 +191,7 @@ module.exports = async (answers) => {
           results.push(result.value);
         }
       });
-    })
+    }),
   );
 
   if (results.length) {
@@ -207,13 +207,13 @@ module.exports = async (answers) => {
 
     const workbook = xlsx.utils.book_new();
     const worksheetAllMonthly = xlsx.utils.json_to_sheet(
-      transformedReportResults
+      transformedReportResults,
     );
 
     xlsx.utils.book_append_sheet(
       workbook,
       worksheetAllMonthly,
-      "Organization Summary"
+      "Organization Summary",
     );
     xlsx.writeFile(workbook, "report.xlsx");
 
@@ -221,7 +221,7 @@ module.exports = async (answers) => {
 
     spinner.stop();
     spinner = new Spinner(
-      `Done! Completed in ${calculateCompletionTime()}\n\n`
+      `Done! Completed in ${calculateCompletionTime()}\n\n`,
     );
     spinner.start();
     spinner.stop();
@@ -229,7 +229,7 @@ module.exports = async (answers) => {
   } else {
     spinner.stop();
     console.log(
-      `Reporting stopped prematurely due to errors (below). Please correct the errors and run the report again.`
+      `Reporting stopped prematurely due to errors (below). Please correct the errors and run the report again.`,
     );
 
     console.log(`
