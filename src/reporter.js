@@ -64,8 +64,7 @@ module.exports = async (answers) => {
   console.log("");
   console.log("Be patient, this may take a bit...");
 
-  spinner = new Spinner("Fetching results...");
-  spinner.start();
+  console.log("Fetching results...");
 
   const getProjectIdsFromUrls = async () =>
     await Promise.all(
@@ -95,9 +94,8 @@ module.exports = async (answers) => {
           limit(
             () =>
               new Promise((resolve, reject) => {
-                spinner.stop();
-                spinner = new Spinner(`Fetching ${url} ID: ${project.id}`);
-                spinner.start();
+                console.log(`Fetching ${url} ID: ${project.id}`);
+
                 const result = {};
                 axios
                   .get(`${url}/worldspace/projects/details/${project.id}`, {
@@ -195,15 +193,11 @@ module.exports = async (answers) => {
   );
 
   if (results.length) {
-    spinner.stop();
-    spinner = new Spinner(`Processing ${results.length} projects...`);
-    spinner.start();
+    console.log(`Processing ${results.length} projects...`);
 
     const transformedReportResults = await transformer.report(results);
 
-    spinner.stop();
-    spinner = new Spinner("Writing local files...");
-    spinner.start();
+    console.log("Writing local files...");
 
     const workbook = xlsx.utils.book_new();
     const worksheetAllMonthly = xlsx.utils.json_to_sheet(
@@ -219,15 +213,10 @@ module.exports = async (answers) => {
 
     end = new Date();
 
-    spinner.stop();
-    spinner = new Spinner(
-      `Done! Completed in ${calculateCompletionTime()}\n\n`
-    );
-    spinner.start();
-    spinner.stop();
+    console.log(`Done! Completed in ${calculateCompletionTime()}\n\n`);
+
     return;
   } else {
-    spinner.stop();
     console.log(
       `Reporting stopped prematurely due to errors (below). Please correct the errors and run the report again.`
     );
