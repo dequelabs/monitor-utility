@@ -64,6 +64,8 @@ module.exports = async (answers) => {
   console.log("");
   console.log("Be patient, this may take a bit...");
 
+  console.log("Fetching results...");
+
   const getProjectIdsFromUrls = async () =>
     await Promise.all(
       urls.map(async (url) => {
@@ -83,103 +85,22 @@ module.exports = async (answers) => {
         }
       })
     );
-  const processProject = async () => {
-    for (const url in projects) {
-      let index = 0;
-      for (const project of projects[url]) {
-        index += 1;
-        if (index == 25) {
-        }
-        console.log(
-          `Fetching (${index} / ${projects[url].length}) of ${url} (ID ${project.id})`
-        );
 
-        const result = {};
-
-        await axios
-          .get(`${url}/worldspace/projects/details/${project.id}`, {
-            auth: { username, password },
-            httpsAgent: agent,
-          })
-          .then(async (data) => {
-            let lastScanDate = "";
-            result.org = data.data.project.organizationName;
-            try {
-              lastScanDate = format(
-                parseISO(data.data.project.last_scan_date),
-                "MM/uu"
-              );
-              result.lastScanDate = data.data.project.last_scan_date;
-            } catch (error) {
-              // Date beyond any reasonable constraint if the original date does not display as a date
-              lastScanDate = "01/1990";
-              result.lastScanDate = "Not Reported";
-            }
-            if (date && lastScanDate !== `${month}/${year}`) {
-              console.log(`Issue with dates for ${project.id}`);
-            } else {
-              result.customAttributes = data.data.project.customAttributes;
-              await setTimeout(async () => {
-                await axios
-                  .get(
-                    `${url}/worldspace/project/summaryReport/${project.id}`,
-                    {
-                      auth: { username, password },
-                      httpsAgent: agent,
-                    }
-                  )
-                  .then((res) => {
-                    result.server = url;
-                    result.report = res.data;
-                    if (res) {
-                      results.push(result);
-                      console.log(results);
-                    } else {
-                      console.log("");
-                      console.log("err result status rejected");
-                      errors.push(result);
-                    }
-                  })
-                  .catch((err) => {
-                    console.log("");
-
-                    console.log(`Failed to get the summary for ${project.id}`);
-                    errors.concat(
-                      `Error getting project summaryReport for ${project.id}.`
-                    );
-                  });
-              }, 100);
-            }
-          })
-          .catch((err) => {
-            console.log("");
-
-            console.log(err);
-            console.log("");
-            console.log(`Error for ${project.id}`);
-
-            errors.concat(`Error getting project details for ${project.id}.`);
-          });
-      }
-    }
-  };
-  const buildAxeReportsPromises = async () => {
+  const buildAxeReportsPromises = () => {
     const promiseMatrix = [];
-    console.log(projects);
     for (const url in projects) {
       let index = 0;
       promiseMatrix.push(
-        await projects[url].map(async (project) =>
+        projects[url].map(async (project) =>
           limit(
             () =>
-              new Promise(async (resolve, reject) => {
-                index +=
+              new Promise((resolve, reject) => {
+                index += 1;
                 console.log(
                   `Fetching (${index} / ${projects[url].length}) of ${url} (ID ${project.id})`
                 );
-
                 const result = {};
-                await axios
+                axios
                   .get(`${url}/worldspace/projects/details/${project.id}`, {
                     auth: { username, password },
                     httpsAgent: agent,
@@ -255,14 +176,24 @@ module.exports = async (answers) => {
   };
 
   await getProjectIdsFromUrls();
-  await processProject();
-  //const axiosPromiseArray = await buildAxeReportsPromises();
-  /*await Promise.allSettled(
+  const axiosPromiseArray = buildAxeReportsPromises();
+  await Promise.allSettled(
     axiosPromiseArray.map(async (axiosPromise) => {
       const responses = await Promise.allSettled(axiosPromise);
-      responses.forEach(async (result) => {});
+      responses.forEach(async (result) => {
+        if (result.status === "rejected") {
+          console.log("");
+          console.log("err result status rejected");
+
+          errors.push(result);
+          return;
+        }
+        if (result.value) {
+          results.push(result.value);
+        }
+      });
     })
-  );*/
+  );
 
   if (results.length) {
     console.log(`Processing ${results.length} projects...`);
