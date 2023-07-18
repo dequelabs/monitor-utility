@@ -12,7 +12,7 @@ const _month = date.getMonth() + 1;
 const month = _month < 10 ? `0${_month}` : _month;
 const year = date.getFullYear();
 
-console.log("\nMonitor Reporter CLI\nVersion: " + version);
+console.log("\nMonitor Utility \nVersion: " + version);
 
 inquirer
   .prompt([
@@ -25,7 +25,7 @@ inquirer
         return new Promise((resolve, reject) => {
           if (
             /(https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9]+\.[^\s]{2,}|www\.[a-zA-Z0-9]+\.[^\s]{2,})/.test(
-              input
+              input,
             )
           ) {
             resolve(true);

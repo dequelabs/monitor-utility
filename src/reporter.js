@@ -53,7 +53,7 @@ module.exports = async (answers) => {
 
   if (!answers || !username || !password) {
     console.log(
-      "Your Axe Monitor username and password are needed to run this application."
+      "Your Axe Monitor username and password are needed to run this application.",
     );
     console.log("");
     return false;
@@ -77,13 +77,14 @@ module.exports = async (answers) => {
           projects[url] = await getProjectIds(url, username, password);
           if (projects[url].length === 0) {
             errors.push(
-              `No favorited projects were found at Axe Monitor URL - ${url}`
+              `No favorited projects were found at Axe Monitor URL - ${url}`,
             );
           }
         } catch (err) {
+          console.log("Error getting projects");
           errors.push(err);
         }
-      })
+      }),
     );
 
   const buildAxeReportsPromises = () => {
@@ -97,7 +98,6 @@ module.exports = async (answers) => {
                 spinner.stop();
                 spinner = new Spinner(`Fetching ${url} ID: ${project.id}`);
                 spinner.start();
-
                 const result = {};
                 axios
                   .get(`${url}/worldspace/projects/details/${project.id}`, {
@@ -105,13 +105,24 @@ module.exports = async (answers) => {
                     httpsAgent: agent,
                   })
                   .then((data) => {
-                    const lastScanDate = format(
-                      parseISO(data.data.project.last_scan_date),
-                      "MM/uu"
-                    );
+                    let lastScanDate = "";
+                    result.org = data.data.project.organizationName;
+                    try {
+                      lastScanDate = format(
+                        parseISO(data.data.project.last_scan_date),
+                        "MM/uu",
+                      );
+                      result.lastScanDate = data.data.project.last_scan_date;
+                    } catch (error) {
+                      // Date beyond any reasonable constraint if the original date does not display as a date
+                      lastScanDate = "01/1990";
+                      result.lastScanDate = "Not Reported";
+                    }
                     if (date && lastScanDate !== `${month}/${year}`) {
+                      console.log(`Issue with dates for ${project.id}`);
                       resolve(false);
                     }
+
                     result.customAttributes =
                       data.data.project.customAttributes;
                     setTimeout(async () => {
@@ -121,32 +132,43 @@ module.exports = async (answers) => {
                           {
                             auth: { username, password },
                             httpsAgent: agent,
-                          }
+                          },
                         )
                         .then((res) => {
                           result.server = url;
                           result.report = res.data;
+
                           resolve(result);
                         })
                         .catch((err) => {
+                          console.log("");
+
+                          console.log(
+                            `Failed to get the summary for ${project.id}`,
+                          );
                           reject(
                             errors.concat(
-                              `Error getting project summaryReport for ${project.id}.`
-                            )
+                              `Error getting project summaryReport for ${project.id}.`,
+                            ),
                           );
                         });
                     }, 100);
                   })
                   .catch((err) => {
+                    console.log("");
+
+                    console.log(err);
+                    console.log("");
+                    console.log(`Error for ${project.id}`);
                     reject(
                       errors.concat(
-                        `Error getting project details for ${project.id}.`
-                      )
+                        `Error getting project details for ${project.id}.`,
+                      ),
                     );
                   });
-              })
-          )
-        )
+              }),
+          ),
+        ),
       );
     }
     return promiseMatrix;
@@ -159,6 +181,9 @@ module.exports = async (answers) => {
       const responses = await Promise.allSettled(axiosPromise);
       responses.forEach(async (result) => {
         if (result.status === "rejected") {
+          console.log("");
+          console.log("err result status rejected");
+
           errors.push(result);
           return;
         }
@@ -166,7 +191,7 @@ module.exports = async (answers) => {
           results.push(result.value);
         }
       });
-    })
+    }),
   );
 
   if (results.length) {
@@ -182,13 +207,13 @@ module.exports = async (answers) => {
 
     const workbook = xlsx.utils.book_new();
     const worksheetAllMonthly = xlsx.utils.json_to_sheet(
-      transformedReportResults
+      transformedReportResults,
     );
 
     xlsx.utils.book_append_sheet(
       workbook,
       worksheetAllMonthly,
-      "Organization Summary"
+      "Organization Summary",
     );
     xlsx.writeFile(workbook, "report.xlsx");
 
@@ -196,7 +221,7 @@ module.exports = async (answers) => {
 
     spinner.stop();
     spinner = new Spinner(
-      `Done! Completed in ${calculateCompletionTime()}\n\n`
+      `Done! Completed in ${calculateCompletionTime()}\n\n`,
     );
     spinner.start();
     spinner.stop();
@@ -204,7 +229,7 @@ module.exports = async (answers) => {
   } else {
     spinner.stop();
     console.log(
-      `Reporting stopped prematurely due to errors (below). Please correct the errors and run the report again.`
+      `Reporting stopped prematurely due to errors (below). Please correct the errors and run the report again.`,
     );
 
     console.log(`
