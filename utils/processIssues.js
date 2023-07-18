@@ -17,6 +17,7 @@ function addSeverityToIssues(issues) {
   return issues;
 }
 module.exports = (issues) => {
+  // Add text representing the priority of the issues
   issues = addSeverityToIssues(issues);
   return issues;
 };
