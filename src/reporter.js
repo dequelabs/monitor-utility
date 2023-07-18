@@ -1,6 +1,5 @@
 const plimit = require("p-limit");
 const axios = require("axios");
-const Spinner = require("cli-spinner").Spinner;
 const parseISO = require("date-fns/parseISO");
 const format = require("date-fns/format");
 const xlsx = require("xlsx");
@@ -14,7 +13,6 @@ const agent = new https.Agent({
 });
 
 const limit = plimit(2);
-let spinner = null;
 
 const projects = {};
 const results = [];
