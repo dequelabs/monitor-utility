@@ -31,7 +31,9 @@ module.exports = (url, username, password) => {
         resolve(response.data.projects);
       })
       .catch((error) => {
-        console.error(`Error: Could not get some projects for you on ${url} ${error}`);
+        console.error(
+          `Error: Could not get some projects for you on ${url} ${error}`,
+        );
       });
   });
 };
