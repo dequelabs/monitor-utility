@@ -1,7 +1,7 @@
 {
-  "name": "monitor-reporter-cli",
+  "name": "monitor-utility",
   "version": "2.1.0",
-  "description": "Reporter tool for Monitor customers",
+  "description": "Utility for verbose outputs of Monitor data using a CLI",
   "main": "src/index.js",
   "scripts": {
     "report": "node ./src/index.js",
