@@ -25,7 +25,7 @@ inquirer
         return new Promise((resolve, reject) => {
           if (
             /(https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9]+\.[^\s]{2,}|www\.[a-zA-Z0-9]+\.[^\s]{2,})/.test(
-              input,
+              input
             )
           ) {
             resolve(true);
@@ -72,7 +72,7 @@ inquirer
             type: "input",
             name: "projectid",
             message:
-              "What are the Project Ids (the *** in {Axe Monitor URL}/worldspace/issues/*** separated by commas(,))?",
+              "List all Project Id(s) you'd like to export, separated by a comma (i.e. 24,15,215). Project Id can be found in your Axe Monitor URL (Example URL https://axemonitor.dequecloud.com/worldspace/organizationProject/summary/544 with 544 being the Project ID).",
           },
         ])
         .then((answersPartTwo) => {
