@@ -78,7 +78,11 @@ module.exports = async (answers) => {
             );
           }
         } catch (err) {
-          console.log("Error getting projects");
+          console.log(" ");
+          console.error("Error getting projects");
+          console.error(err);
+          console.log(" ");
+
           errors.push(err);
         }
       })
@@ -142,13 +146,12 @@ module.exports = async (answers) => {
                         .catch((err) => {
                           console.log("");
 
-                          console.log(
+                          console.error(
                             `Failed to get the summary for ${project.id}`
                           );
-                          reject(
-                            errors.concat(
-                              `Error getting project summaryReport for ${project.id}.`
-                            )
+                          console.log("");
+                          errors.concat(
+                            `Error getting project summaryReport for ${project.id}.`
                           );
                         });
                     }, 100);
@@ -156,13 +159,11 @@ module.exports = async (answers) => {
                   .catch((err) => {
                     console.log("");
 
-                    console.log(err);
+                    console.error(`Error for ${project.id}`);
+                    console.error(err);
                     console.log("");
-                    console.log(`Error for ${project.id}`);
-                    reject(
-                      errors.concat(
-                        `Error getting project details for ${project.id}.`
-                      )
+                    errors.concat(
+                      `Error getting project details for ${project.id}.`
                     );
                   });
               })

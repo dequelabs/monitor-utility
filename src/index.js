@@ -77,5 +77,5 @@ inquirer
     reporter(answers);
   })
   .catch((error) => {
-    console.log(error);
+    console.error(error);
   });
