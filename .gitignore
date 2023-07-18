@@ -7,3 +7,4 @@ monthly.json
 .DS_Store
 .vscode
 ~$report.xlsx
+issues-*

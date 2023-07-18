@@ -2,6 +2,7 @@ const axios = require("axios");
 const { count } = require("console");
 const https = require("https");
 var fs = require("fs");
+const issuesProcesser = require("../utils/processIssues");
 function correctDataForURL(issues, pageList) {
   for (var i = 0; i < issues.length; i++) {
     let relevantPage = pageList.find(
@@ -177,6 +178,8 @@ module.exports = async (answers) => {
     // Update issues with correct URL
     console.log(`Correcting data for project ${projectid}...`);
     issues = correctDataForURL(issues, pageList);
+    // Modify the issues to meet user's wants
+    issues = issuesProcesser(issues);
     // Write the issues to files
     console.log(`Preparing to ouput data for project ${projectid}...`);
 
