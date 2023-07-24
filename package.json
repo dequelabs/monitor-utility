@@ -1,6 +1,6 @@
 {
   "name": "monitor-utility",
-  "version": "2.0.3",
+  "version": "2.1.0",
   "description": "Utility for verbose outputs of Monitor data using a CLI",
   "main": "src/index.js",
   "scripts": {
