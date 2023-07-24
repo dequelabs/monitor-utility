@@ -1,7 +1,7 @@
 {
-  "name": "monitor-reporter-cli",
-  "version": "2.0.4",
-  "description": "Reporter tool for Monitor customers",
+  "name": "monitor-utility",
+  "version": "2.1.1",
+  "description": "Utility for verbose outputs of axe Monitor data using a CLI",
   "main": "src/index.js",
   "scripts": {
     "report": "node ./src/index.js",
@@ -9,14 +9,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/dequelabs/monitor-reporter-cli.git"
+    "url": "git+https://github.com/dequelabs/monitor-utility.git"
   },
   "author": "Dev Services <devservices@deque.com>",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/dequelabs/monitor-reporter-cli/issues"
+    "url": "https://github.com/dequelabs/monitor-utility/issues"
   },
-  "homepage": "https://github.com/dequelabs/monitor-reporter-cli#readme",
+  "homepage": "https://github.com/dequelabs/monitor-utility#readme",
   "dependencies": {
     "axios": "^0.21.1",
     "clear": "^0.1.0",
