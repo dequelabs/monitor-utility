@@ -88,7 +88,7 @@ module.exports = async (answers) => {
       }),
     );
 
-  const buildAxeReportsPromises = () => {
+  const buildAxeReportsPromises = async () => {
     const promiseMatrix = [];
     for (const url in projects) {
       let index = 0;
@@ -173,60 +173,65 @@ module.exports = async (answers) => {
     }
     return promiseMatrix;
   };
+  const iteratePromises = async () => {
+    await Promise.allSettled(
+      axiosPromiseArray.map(async (axiosPromise) => {
+        const responses = await Promise.allSettled(axiosPromise);
+        responses.forEach(async (result) => {
+          if (result.status === "rejected") {
+            console.log("");
+            console.log("err result status rejected");
 
-  await getProjectIdsFromUrls();
-  const axiosPromiseArray = buildAxeReportsPromises();
-  await Promise.allSettled(
-    axiosPromiseArray.map(async (axiosPromise) => {
-      const responses = await Promise.allSettled(axiosPromise);
-      responses.forEach(async (result) => {
-        if (result.status === "rejected") {
-          console.log("");
-          console.log("err result status rejected");
-
-          errors.push(result);
-          return;
-        }
-        if (result.value) {
-          results.push(result.value);
-        }
-      });
-    }),
-  );
-
-  if (results.length) {
-    console.log(`Processing ${results.length} projects...`);
-
-    const transformedReportResults = await transformer.report(results);
-
-    console.log("Writing local files...");
-
-    const workbook = xlsx.utils.book_new();
-    const worksheetAllMonthly = xlsx.utils.json_to_sheet(
-      transformedReportResults,
+            errors.push(result);
+            return;
+          }
+          if (result.value) {
+            results.push(result.value);
+          }
+        });
+      }),
     );
+  };
+  const outputResults = async () => {
+    if (results.length) {
+      console.log(`Processing ${results.length} projects...`);
 
-    xlsx.utils.book_append_sheet(
-      workbook,
-      worksheetAllMonthly,
-      "Organization Summary",
-    );
-    xlsx.writeFile(workbook, "report.xlsx");
+      const transformedReportResults = await transformer.report(results);
 
-    end = new Date();
+      console.log("Writing local files...");
 
-    console.log(`Done! Completed in ${calculateCompletionTime()}\n\n`);
+      const workbook = xlsx.utils.book_new();
+      const worksheetAllMonthly = xlsx.utils.json_to_sheet(
+        transformedReportResults,
+      );
 
-    return;
-  } else {
-    console.log(
-      `Reporting stopped prematurely due to errors (below). Please correct the errors and run the report again.`,
-    );
+      xlsx.utils.book_append_sheet(
+        workbook,
+        worksheetAllMonthly,
+        "Organization Summary",
+      );
+      xlsx.writeFile(workbook, "report.xlsx");
 
-    console.log(`
+      end = new Date();
+
+      console.log(`Done! Completed in ${calculateCompletionTime()}\n\n`);
+
+      return;
+    } else {
+      console.log(
+        `Reporting stopped prematurely due to errors (below). Please correct the errors and run the report again.`,
+      );
+
+      console.log(`
 List of errors:
 ${errors.join("\n")}
     `);
-    return;
-  }
+      return;
+    }
+  };
+
+  await getProjectIdsFromUrls();
+  const axiosPromiseArray = await buildAxeReportsPromises();
+  await iteratePromises();
+  await outputResults();
 };
