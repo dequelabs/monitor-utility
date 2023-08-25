@@ -51,7 +51,7 @@ module.exports = async (answers) => {
 
   if (!answers || !username || !password) {
     console.log(
-      "Your Axe Monitor username and password are needed to run this application.",
+      "Your Axe Monitor username and password are needed to run this application."
     );
     console.log("");
     return false;
@@ -74,7 +74,7 @@ module.exports = async (answers) => {
           projects[url] = await getProjectIds(url, username, password);
           if (projects[url].length === 0) {
             errors.push(
-              `No favorited projects were found at Axe Monitor URL - ${url}`,
+              `No favorited projects were found at Axe Monitor URL - ${url}`
             );
           }
         } catch (err) {
@@ -85,7 +85,7 @@ module.exports = async (answers) => {
 
           errors.push(err);
         }
-      }),
+      })
     );
 
   const buildAxeReportsPromises = async () => {
@@ -99,7 +99,7 @@ module.exports = async (answers) => {
               new Promise((resolve, reject) => {
                 index += 1;
                 console.log(
-                  `Fetching (${index} / ${projects[url].length}) of ${url} (ID ${project.id})`,
+                  `Fetching (${index} / ${projects[url].length}) of ${url} (ID ${project.id})`
                 );
                 const result = {};
                 axios
@@ -113,7 +113,7 @@ module.exports = async (answers) => {
                     try {
                       lastScanDate = format(
                         parseISO(data.data.project.last_scan_date),
-                        "MM/uu",
+                        "MM/uu"
                       );
                       result.lastScanDate = data.data.project.last_scan_date;
                     } catch (error) {
@@ -135,7 +135,7 @@ module.exports = async (answers) => {
                           {
                             auth: { username, password },
                             httpsAgent: agent,
-                          },
+                          }
                         )
                         .then((res) => {
                           result.server = url;
@@ -147,11 +147,11 @@ module.exports = async (answers) => {
                           console.log("");
 
                           console.error(
-                            `Failed to get the summary for ${project.id}`,
+                            `Failed to get the summary for ${project.id}`
                           );
                           console.log("");
                           errors.concat(
-                            `Error getting project summaryReport for ${project.id}.`,
+                            `Error getting project summaryReport for ${project.id}.`
                           );
                         });
                     }, 100);
@@ -163,12 +163,12 @@ module.exports = async (answers) => {
                     console.error(err);
                     console.log("");
                     errors.concat(
-                      `Error getting project details for ${project.id}.`,
+                      `Error getting project details for ${project.id}.`
                     );
                   });
-              }),
-          ),
-        ),
+              })
+          )
+        )
       );
     }
     return promiseMatrix;
@@ -189,7 +189,7 @@ module.exports = async (answers) => {
             results.push(result.value);
           }
         });
-      }),
+      })
     );
   };
   const outputResults = async () => {
@@ -202,15 +202,21 @@ module.exports = async (answers) => {
 
       const workbook = xlsx.utils.book_new();
       const worksheetAllMonthly = xlsx.utils.json_to_sheet(
-        transformedReportResults,
+        transformedReportResults
       );
 
       xlsx.utils.book_append_sheet(
         workbook,
         worksheetAllMonthly,
-        "Organization Summary",
+        "Organization Summary"
       );
-      xlsx.writeFile(workbook, "report.xlsx");
+      try {
+        xlsx.writeFile(workbook, `report-${Date.now()}.xlsx`);
+        console.log(`Wrote output as report-${Date.now()}`);
+      } catch (err) {
+        console.error("Error writing output. Please run script again.");
+        console.error(err);
+      }
 
       end = new Date();
 
@@ -219,7 +225,7 @@ module.exports = async (answers) => {
       return;
     } else {
       console.log(
-        `Reporting stopped prematurely due to errors (below). Please correct the errors and run the report again.`,
+        `Reporting stopped prematurely due to errors (below). Please correct the errors and run the report again.`
       );
 
       console.log(`
