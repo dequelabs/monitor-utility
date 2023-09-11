@@ -210,7 +210,13 @@ module.exports = async (answers) => {
         worksheetAllMonthly,
         "Organization Summary",
       );
-      xlsx.writeFile(workbook, "report.xlsx");
+      try {
+        xlsx.writeFile(workbook, `report-${Date.now()}.xlsx`);
+        console.log(`Wrote output as report-${Date.now()}`);
+      } catch (err) {
+        console.error("Error writing output. Please run script again.");
+        console.error(err);
+      }
 
       end = new Date();
 
@@ -221,6 +227,11 @@ module.exports = async (answers) => {
       console.log(
         `Reporting stopped prematurely due to errors (below). Please correct the errors and run the report again.`,
       );
+
+
+
+
+
 
       console.log(`
 List of errors:
