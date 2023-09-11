@@ -228,6 +228,11 @@ module.exports = async (answers) => {
         `Reporting stopped prematurely due to errors (below). Please correct the errors and run the report again.`,
       );
 
+
+
+
+
+
       console.log(`
 List of errors:
 ${errors.join("\n")}
