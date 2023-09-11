@@ -25,7 +25,7 @@ inquirer
         return new Promise((resolve, reject) => {
           if (
             /(https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9]+\.[^\s]{2,}|www\.[a-zA-Z0-9]+\.[^\s]{2,})/.test(
-              input
+              input,
             )
           ) {
             resolve(true);
@@ -125,5 +125,5 @@ as a "favorite" to include or exclude them.
     }
   })
   .catch((error) => {
-    console.log(error);
+    console.error(error);
   });

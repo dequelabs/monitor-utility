@@ -1,6 +1,5 @@
 const plimit = require("p-limit");
 const axios = require("axios");
-const Spinner = require("cli-spinner").Spinner;
 const parseISO = require("date-fns/parseISO");
 const format = require("date-fns/format");
 const xlsx = require("xlsx");
@@ -14,7 +13,6 @@ const agent = new https.Agent({
 });
 
 const limit = plimit(2);
-let spinner = null;
 
 const projects = {};
 const results = [];
@@ -64,8 +62,7 @@ module.exports = async (answers) => {
   console.log("");
   console.log("Be patient, this may take a bit...");
 
-  spinner = new Spinner("Fetching results...");
-  spinner.start();
+  console.log("Fetching results...");
 
   const getProjectIdsFromUrls = async () =>
     await Promise.all(
@@ -81,23 +78,29 @@ module.exports = async (answers) => {
             );
           }
         } catch (err) {
-          console.log("Error getting projects");
+          console.log(" ");
+          console.error("Error getting projects");
+          console.error(err);
+          console.log(" ");
+
           errors.push(err);
         }
       }),
     );
 
-  const buildAxeReportsPromises = () => {
+  const buildAxeReportsPromises = async () => {
     const promiseMatrix = [];
     for (const url in projects) {
+      let index = 0;
       promiseMatrix.push(
         projects[url].map(async (project) =>
           limit(
             () =>
               new Promise((resolve, reject) => {
-                spinner.stop();
-                spinner = new Spinner(`Fetching ${url} ID: ${project.id}`);
-                spinner.start();
+                index += 1;
+                console.log(
+                  `Fetching (${index} / ${projects[url].length}) of ${url} (ID ${project.id})`,
+                );
                 const result = {};
                 axios
                   .get(`${url}/worldspace/projects/details/${project.id}`, {
@@ -143,13 +146,12 @@ module.exports = async (answers) => {
                         .catch((err) => {
                           console.log("");
 
-                          console.log(
+                          console.error(
                             `Failed to get the summary for ${project.id}`,
                           );
-                          reject(
-                            errors.concat(
-                              `Error getting project summaryReport for ${project.id}.`,
-                            ),
+                          console.log("");
+                          errors.concat(
+                            `Error getting project summaryReport for ${project.id}.`,
                           );
                         });
                     }, 100);
@@ -157,13 +159,11 @@ module.exports = async (answers) => {
                   .catch((err) => {
                     console.log("");
 
-                    console.log(err);
+                    console.error(`Error for ${project.id}`);
+                    console.error(err);
                     console.log("");
-                    console.log(`Error for ${project.id}`);
-                    reject(
-                      errors.concat(
-                        `Error getting project details for ${project.id}.`,
-                      ),
+                    errors.concat(
+                      `Error getting project details for ${project.id}.`,
                     );
                   });
               }),
@@ -173,69 +173,65 @@ module.exports = async (answers) => {
     }
     return promiseMatrix;
   };
+  const iteratePromises = async () => {
+    await Promise.allSettled(
+      axiosPromiseArray.map(async (axiosPromise) => {
+        const responses = await Promise.allSettled(axiosPromise);
+        responses.forEach(async (result) => {
+          if (result.status === "rejected") {
+            console.log("");
+            console.log("err result status rejected");
 
-  await getProjectIdsFromUrls();
-  const axiosPromiseArray = buildAxeReportsPromises();
-  await Promise.allSettled(
-    axiosPromiseArray.map(async (axiosPromise) => {
-      const responses = await Promise.allSettled(axiosPromise);
-      responses.forEach(async (result) => {
-        if (result.status === "rejected") {
-          console.log("");
-          console.log("err result status rejected");
-
-          errors.push(result);
-          return;
-        }
-        if (result.value) {
-          results.push(result.value);
-        }
-      });
-    }),
-  );
-
-  if (results.length) {
-    spinner.stop();
-    spinner = new Spinner(`Processing ${results.length} projects...`);
-    spinner.start();
-
-    const transformedReportResults = await transformer.report(results);
-
-    spinner.stop();
-    spinner = new Spinner("Writing local files...");
-    spinner.start();
-
-    const workbook = xlsx.utils.book_new();
-    const worksheetAllMonthly = xlsx.utils.json_to_sheet(
-      transformedReportResults,
+            errors.push(result);
+            return;
+          }
+          if (result.value) {
+            results.push(result.value);
+          }
+        });
+      }),
     );
+  };
+  const outputResults = async () => {
+    if (results.length) {
+      console.log(`Processing ${results.length} projects...`);
 
-    xlsx.utils.book_append_sheet(
-      workbook,
-      worksheetAllMonthly,
-      "Organization Summary",
-    );
-    xlsx.writeFile(workbook, "report.xlsx");
+      const transformedReportResults = await transformer.report(results);
 
-    end = new Date();
+      console.log("Writing local files...");
 
-    spinner.stop();
-    spinner = new Spinner(
-      `Done! Completed in ${calculateCompletionTime()}\n\n`,
-    );
-    spinner.start();
-    spinner.stop();
-    return;
-  } else {
-    spinner.stop();
-    console.log(
-      `Reporting stopped prematurely due to errors (below). Please correct the errors and run the report again.`,
-    );
+      const workbook = xlsx.utils.book_new();
+      const worksheetAllMonthly = xlsx.utils.json_to_sheet(
+        transformedReportResults,
+      );
 
-    console.log(`
+      xlsx.utils.book_append_sheet(
+        workbook,
+        worksheetAllMonthly,
+        "Organization Summary",
+      );
+      xlsx.writeFile(workbook, "report.xlsx");
+
+      end = new Date();
+
+      console.log(`Done! Completed in ${calculateCompletionTime()}\n\n`);
+
+      return;
+    } else {
+      console.log(
+        `Reporting stopped prematurely due to errors (below). Please correct the errors and run the report again.`,
+      );
+
+      console.log(`
 List of errors:
 ${errors.join("\n")}
     `);
-    return;
-  }
+      return;
+    }
+  };
+
+  await getProjectIdsFromUrls();
+  const axiosPromiseArray = await buildAxeReportsPromises();
+  await iteratePromises();
+  await outputResults();
 };
