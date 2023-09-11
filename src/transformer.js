@@ -33,7 +33,11 @@ module.exports = {
             "Moderate Issues": result.report.report.fair.toString(),
             "Serious Issues": result.report.report.serious.toString(),
             "Critical Issues": result.report.report.critical.toString(),
-            "Accessibility Score": result.report.report.score.toString(),
+            "Accessibility Score (%)": parseFloat(
+              result.report.report.score.toString(),
+            )
+              .toFixed(2)
+              .toString(),
             "Last Scan Date": result.lastScanDate,
             ARIA: getTotal("Aria"),
             Color: getTotal("Color"),
