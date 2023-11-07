@@ -5,7 +5,7 @@ var fs = require("fs");
 function correctDataForURL(issues, pageList) {
   for (var i = 0; i < issues.length; i++) {
     let relevantPage = pageList.find(
-      (x) => x.page_id === issues[i]["page"]["id"],
+      (x) => x.page_id === issues[i]["page"]["id"]
     );
     if (relevantPage?.url) {
       issues[i].url = relevantPage.url;
@@ -25,7 +25,7 @@ async function getPages(data, agent) {
       })
       .catch((error) => {
         console.error(
-          `Error: Could not get some pages for you on ${url} ${error}`,
+          `Error: Could not get some pages for you on ${url} ${error}`
         );
       });
     totalPages.push(...results.data.pageList);
@@ -52,7 +52,7 @@ async function getIssues(data, agent) {
       })
       .catch((error) => {
         console.error(
-          `Error: Could not get some projects for you on ${url} ${error}`,
+          `Error: Could not get some projects for you on ${url} ${error}`
         );
       });
     totalIssues.push(...results.data.issues);
@@ -141,13 +141,11 @@ module.exports = async (answers) => {
   let password = answers.password;
   let projectids;
 
-  answers.projectid === " " ?
-    projectids = answers.projectid.replaceAll(" ", "") :
-    projectids = answers.projectid;
-  
-  projectids.length > 1 ? 
-    projectids = projectids.split(",") :
-    projectids;
+  answers.projectid === " "
+    ? (projectids = answers.projectid.replaceAll(" ", ""))
+    : (projectids = answers.projectid);
+
+  projectids.length > 1 ? (projectids = projectids.split(",")) : projectids;
 
   for (var projectid of projectids) {
     const agent = new https.Agent({
