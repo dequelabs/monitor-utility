@@ -126,13 +126,16 @@ async function writeIssues(issues, projectid) {
     issues[i] = flattenJSON(issues[i]);
   }
   let csv = convertJsonArrayToCSV(issues);
-  fs.writeFile(`issues-${projectid}.csv`, csv, "utf-8", (err) => {
-    if (err) {
-      console.error(err);
-      return;
-    }
-    console.log(`issues-${projectid}.csv has been created`);
-  });
+  if(issues.length > 0){
+    fs.writeFile(`issues-${projectid}.csv`, csv, "utf-8", (err) => {
+      if (err) {
+        console.error(err);
+        return;
+      }
+      console.log(`issues-${projectid}.csv has been created`);
+    });
+  }
+  
 }
 module.exports = async (answers) => {
   // Extract the credentials and data passed to inquirer
