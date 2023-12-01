@@ -19,7 +19,21 @@ function addProjectNameInIssues(issues, projectDetails){
   for (var i = 0; i < issues.length; i++) {
 
     issues[i]['project']['name'] = projectDetails[0]['name']
-    issues[i]['organizationName'] = projectDetails[0]['organizationName']
+
+    let orgName = projectDetails[0]['organizationName']
+
+    // get position of project key  
+    let projectPosition = Object.keys(issues[i]).indexOf('project')
+
+    //convert object to keyValues ["key1", "value1"] ["key2", "value2"]
+    let keyValues = Object.entries(issues[i]); 
+    // insert key value before project key
+    keyValues.splice(projectPosition,0, ["organizationName",orgName]); 
+
+    // convert keyValue to Object
+    let newIssues = Object.fromEntries(keyValues) 
+    // replace object with new object
+    issues[i] = newIssues
 
   }
   return issues;
