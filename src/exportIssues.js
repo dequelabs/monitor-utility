@@ -183,7 +183,7 @@ module.exports = async (answers) => {
 
   projectids.length > 1 ? (projectids = projectids.split(",")) : projectids;
 
-  if(reportType === "combined-issues"){
+  if(reportType === "combine-project-reports"){
     let combinedIssues = [];
     let combinedIssuesProjectIds = "";
     for (var projectid of projectids) {

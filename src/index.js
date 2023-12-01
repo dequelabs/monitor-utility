@@ -70,14 +70,19 @@ inquirer
       type: "list",
       name: "reportType",
       message: "Individual project report or Combine Report",
+      when:(answers)=>{
+        if(answers.path === "issues"){
+          return true;
+        }
+      },
       choices: [
         {
-          name: "combined-issues",
-          value: "combined-issues",
+          name: "Combine project reports",
+          value: "combine-project-reports",
           description: "Export all of the issues from different project.",
         },
         {
-          name: "individual-issues",
+          name: "Individual project report",
           value: "individual-issues",
           description: "Export all of the issues from a specific project.",
         },
