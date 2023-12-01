@@ -19,6 +19,7 @@ function addProjectNameInIssues(issues, projectDetails){
   for (var i = 0; i < issues.length; i++) {
 
     issues[i]['project']['name'] = projectDetails[0]['name']
+    issues[i]['project']['organizationName'] = projectDetails[0]['organizationName']
 
   }
   return issues;
@@ -26,6 +27,7 @@ function addProjectNameInIssues(issues, projectDetails){
 
 
 async function getPages(data, agent) {
+  let url = data.url
   let totalPages = [];
   let countOfPages = 15000;
   let offsetMultipler = 0;
