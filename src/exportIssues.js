@@ -13,6 +13,18 @@ function correctDataForURL(issues, pageList) {
   }
   return issues;
 }
+
+
+function addProjectNameInIssues(issues, projectDetails){
+  for (var i = 0; i < issues.length; i++) {
+
+    issues[i]['project']['name'] = projectDetails[0]['name']
+
+  }
+  return issues;
+}
+
+
 async function getPages(data, agent) {
   let totalPages = [];
   let countOfPages = 15000;
@@ -61,6 +73,24 @@ async function getIssues(data, agent) {
     offsetMultipler += 1;
   }
   return totalIssues;
+}
+
+async function getProjectDetails(data, agent){
+  const url = data.url;
+  // Used for accessing Axe Monitor'
+    let projectDetails = [];
+    let results = await axios(data, { httpsAgent: agent })
+      .then((response) => {
+        return response;
+      })
+      .catch((error) => {
+        console.error(
+          `Error: Could not get some projects for you on ${url} ${error}`
+        );
+      });
+      results.data.project ? projectDetails.push(results.data.project) : projectDetails.push("NULL");
+      // results.data.project['name'] ? projectName = results.data.project['name']  : projectName = "" ;
+  return projectDetails;
 }
 
 // Iterate over the array of flattened objects to convert them to a CSV.
@@ -142,6 +172,9 @@ module.exports = async (answers) => {
   let url = answers.url;
   let username = answers.username;
   let password = answers.password;
+
+  let reportType = answers.reportType
+
   let projectids;
 
   answers.projectid === " "
@@ -150,44 +183,135 @@ module.exports = async (answers) => {
 
   projectids.length > 1 ? (projectids = projectids.split(",")) : projectids;
 
-  for (var projectid of projectids) {
-    const agent = new https.Agent({
-      rejectUnauthorized: false,
-    });
-    const pageData = {
-      url: `${url}/worldspace/pages/byProject?projectId=${projectid}`,
-      method: "get",
-      params: {
-        limit: 15000,
-      },
-      auth: {
-        username,
-        password,
-      },
-    };
-    const data = {
-      url: `${url}/worldspace/issues/${projectid}`,
-      method: "get",
-      params: {
-        pageSize: 15000,
-      },
-      auth: {
-        username,
-        password,
-      },
-    };
-    let pageList = await getPages(pageData, agent);
-    // Get all issues for the relevent project with the specified id
-    console.log(`Getting all issues for project ${projectid}...`);
+  if(reportType === "combined-issues"){
+    let combinedIssues = [];
+    let combinedIssuesProjectIds = "";
+    for (var projectid of projectids) {
+      const agent = new https.Agent({
+        rejectUnauthorized: false,
+      });
+      const pageData = {
+        url: `${url}/worldspace/pages/byProject?projectId=${projectid}`,
+        method: "get",
+        params: {
+          limit: 15000,
+        },
+        auth: {
+          username,
+          password,
+        },
+      };
+      const data = {
+        url: `${url}/worldspace/issues/${projectid}`,
+        method: "get",
+        params: {
+          pageSize: 15000,
+        },
+        auth: {
+          username,
+          password,
+        },
+      };
+  
+      const projectNameData = {
+        url: `${url}/worldspace/projects/resources/${projectid}`,
+        method: "get",
+        params: {
+          pageSize: 15000,
+        },
+        auth: {
+          username,
+          password,
+        },
+      };
 
-    let issues = await getIssues(data, agent);
+      let pageList = await getPages(pageData, agent);
+      // Get all issues for the relevent project with the specified id
+      console.log(`Getting all issues for project ${projectid}...`);
+  
+      let issues = await getIssues(data, agent);
+  
+      //Get project name with specified projct id
+      let projectDetails = await getProjectDetails(projectNameData, agent)
+    
+      // Update issues with correct URL
+      console.log(`Correcting data for project ${projectid}...`);
+      issues = correctDataForURL(issues, pageList);
+      
+      //Add project name to in project object in issues 
+      issues = addProjectNameInIssues(issues, projectDetails)
+  
+      // Write the issues to files
+      console.log(`Preparing to ouput data for project ${projectid}...`);
+  
+      combinedIssuesProjectIds === "" ? combinedIssuesProjectIds = `${projectid}` : combinedIssuesProjectIds = `${combinedIssuesProjectIds}-${projectid}`
 
-    // Update issues with correct URL
-    console.log(`Correcting data for project ${projectid}...`);
-    issues = correctDataForURL(issues, pageList);
-    // Write the issues to files
-    console.log(`Preparing to ouput data for project ${projectid}...`);
+      combinedIssues.push(...issues)
 
-    writeIssues(issues, projectid);
+    }
+    writeIssues(combinedIssues, combinedIssuesProjectIds);
+
+  }else{
+    for (var projectid of projectids) {
+      const agent = new https.Agent({
+        rejectUnauthorized: false,
+      });
+      const pageData = {
+        url: `${url}/worldspace/pages/byProject?projectId=${projectid}`,
+        method: "get",
+        params: {
+          limit: 15000,
+        },
+        auth: {
+          username,
+          password,
+        },
+      };
+      const data = {
+        url: `${url}/worldspace/issues/${projectid}`,
+        method: "get",
+        params: {
+          pageSize: 15000,
+        },
+        auth: {
+          username,
+          password,
+        },
+      };
+  
+      const projectNameData = {
+        url: `${url}/worldspace/projects/resources/${projectid}`,
+        method: "get",
+        params: {
+          pageSize: 15000,
+        },
+        auth: {
+          username,
+          password,
+        },
+      };
+      let pageList = await getPages(pageData, agent);
+      // Get all issues for the relevent project with the specified id
+      console.log(`Getting all issues for project ${projectid}...`);
+  
+      let issues = await getIssues(data, agent);
+  
+      //Get project name with specified projct id
+      let projectDetails = await getProjectDetails(projectNameData, agent)
+  
+      console.log("Project name: ",projectDetails)
+  
+      // Update issues with correct URL
+      console.log(`Correcting data for project ${projectid}...`);
+      issues = correctDataForURL(issues, pageList);
+      
+      //Add project name to in project object in issues 
+      issues = addProjectNameInIssues(issues, projectDetails)
+  
+      // Write the issues to files
+      console.log(`Preparing to ouput data for project ${projectid}...`);
+  
+      writeIssues(issues, projectid);
+    }
   }
 };

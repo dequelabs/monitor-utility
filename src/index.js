@@ -33,17 +33,21 @@ inquirer
           reject("Incorrect URL format");
         });
       },
-      default: "https://axemonitor.dequecloud.com",
+      // default: "https://axemonitor.dequecloud.com",
+      // default: "https://qa-windows-validation.dequemonitordev.com"
+      default : "https://qa-rocky-regression.dequemonitordev.com"
     },
     {
       type: "input",
       name: "username",
       message: "Enter your Axe Monitor email address:",
+      default:"admin.monitor@deque.com"
     },
     {
       type: "password",
       name: "password",
       message: "Enter your Axe Monitor password:",
+      default: "F@ncy7201toaster"
     },
     {
       type: "list",
@@ -58,6 +62,23 @@ inquirer
         {
           name: "issues",
           value: "issues",
+          description: "Export all of the issues from a specific project.",
+        },
+      ],
+    },
+    {
+      type: "list",
+      name: "reportType",
+      message: "Individual project report or Combine Report",
+      choices: [
+        {
+          name: "combined-issues",
+          value: "combined-issues",
+          description: "Export all of the issues from different project.",
+        },
+        {
+          name: "individual-issues",
+          value: "individual-issues",
           description: "Export all of the issues from a specific project.",
         },
       ],
