@@ -299,8 +299,6 @@ module.exports = async (answers) => {
       //Get project name with specified projct id
       let projectDetails = await getProjectDetails(projectNameData, agent)
   
-      console.log("Project name: ",projectDetails)
-  
       // Update issues with correct URL
       console.log(`Correcting data for project ${projectid}...`);
       issues = correctDataForURL(issues, pageList);
