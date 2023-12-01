@@ -246,7 +246,7 @@ module.exports = async (answers) => {
   
       combinedIssuesProjectIds === "" ? combinedIssuesProjectIds = `${projectid}` : combinedIssuesProjectIds = `${combinedIssuesProjectIds}-${projectid}`
 
-      combinedIssues.push(...issues)
+      combinedIssues = [...combinedIssues, ...issues];
 
     }
     writeIssues(combinedIssues, combinedIssuesProjectIds);
