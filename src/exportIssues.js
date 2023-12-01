@@ -19,7 +19,7 @@ function addProjectNameInIssues(issues, projectDetails){
   for (var i = 0; i < issues.length; i++) {
 
     issues[i]['project']['name'] = projectDetails[0]['name']
-    issues[i]['project']['organizationName'] = projectDetails[0]['organizationName']
+    issues[i]['organizationName'] = projectDetails[0]['organizationName']
 
   }
   return issues;
