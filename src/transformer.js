@@ -29,10 +29,10 @@ module.exports = {
             Organization: result.org,
             "Total Pages": result.report.report.totalPages,
             "Total Issues": getTotal(),
-            "Minor Issues": result.report.report.good.toString(),
-            "Moderate Issues": result.report.report.fair.toString(),
-            "Serious Issues": result.report.report.serious.toString(),
-            "Critical Issues": result.report.report.critical.toString(),
+            "Pages having Minor or No Issues": result.report.report.good.toString(),
+            "Pages having Moderate Issues": result.report.report.fair.toString(),
+            "Pages having Serious Issues": result.report.report.serious.toString(),
+            "Pages having Critical Issues": result.report.report.critical.toString(),
             "Accessibility Score (%)": parseFloat(
               result.report.report.score.toString(),
             )
