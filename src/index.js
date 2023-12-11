@@ -33,17 +33,17 @@ inquirer
           reject("Incorrect URL format");
         });
       },
-      default: "https://axemonitor.dequecloud.com",
+      default: "https://axemonitor.dequecloud.com"
     },
     {
       type: "input",
       name: "username",
-      message: "Enter your Axe Monitor email address:",
+      message: "Enter your Axe Monitor email address:"
     },
     {
       type: "password",
       name: "password",
-      message: "Enter your Axe Monitor password:",
+      message: "Enter your Axe Monitor password:"
     },
     {
       type: "list",
@@ -58,6 +58,28 @@ inquirer
         {
           name: "issues",
           value: "issues",
+          description: "Export all of the issues from a specific project.",
+        },
+      ],
+    },
+    {
+      type: "list",
+      name: "reportType",
+      message: "Individual project issues or Combined issues of multiple projects",
+      when:(answers)=>{
+        if(answers.path === "issues"){
+          return true;
+        }
+      },
+      choices: [
+        {
+          name: "Combined issues of multiple projects",
+          value: "combine-project-reports",
+          description: "Export all of the issues from different project.",
+        },
+        {
+          name: "Individual project issues",
+          value: "individual-issues",
           description: "Export all of the issues from a specific project.",
         },
       ],
