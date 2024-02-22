@@ -170,6 +170,17 @@ async function writeIssues(issues, projectid) {
   console.log(`Flattening data for project ${projectid}...`);
   for (var i = 0; i < issues.length; i++) {
     issues[i] = flattenJSON(issues[i]);
+    if(issues[i].weight){
+        if(issues[i].weight ===0){
+            issues[i].weight = "minor";
+        }else if(issues[i].weight ===1){
+          issues[i].weight = "moderate";
+        }else if(issues[i].weight ===2){
+          issues[i].weight = "serious";
+        }else if(issues[i].weight ===3){
+          issues[i].weight = "critical";
+        }
+    }
   }
   let csv = convertJsonArrayToCSV(issues);
   if(issues.length > 0){
