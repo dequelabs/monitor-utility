@@ -2,6 +2,12 @@ const axios = require("axios");
 const { count } = require("console");
 const https = require("https");
 var fs = require("fs");
+const severityLabels = {
+  0: "minor",
+  1: "moderate",
+  2: "serious",
+  3: "critical",
+};
 function correctDataForURL(issues, pageList) {
   for (var i = 0; i < issues.length; i++) {
     let relevantPage = pageList.find(
@@ -170,17 +176,8 @@ async function writeIssues(issues, projectid) {
   console.log(`Flattening data for project ${projectid}...`);
   for (var i = 0; i < issues.length; i++) {
     issues[i] = flattenJSON(issues[i]);
-    if(issues[i].weight){
-        if(issues[i].weight ===0){
-            issues[i].weight = "minor";
-        }else if(issues[i].weight ===1){
-          issues[i].weight = "moderate";
-        }else if(issues[i].weight ===2){
-          issues[i].weight = "serious";
-        }else if(issues[i].weight ===3){
-          issues[i].weight = "critical";
-        }
-    }
+    // Map Severity Weight from Number to text.
+      issues[i].weight = severityLabels[issues[i].weight] ?? "unknown";
   }
   let csv = convertJsonArrayToCSV(issues);
   if(issues.length > 0){
