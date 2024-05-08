@@ -99,7 +99,7 @@ module.exports = async (answers) => {
               new Promise((resolve, reject) => {
                 index += 1;
                 console.log(
-                  `Fetching (${index} / ${projects[url].length}) of ${url} (ID ${project.id})`
+                  `Fetching (${index} / ${projects[url].length}) of ${url} (Project ID:${project.id}, Project name:${project.name}, Project Org:${project.organizationName})`
                 );
                 const result = {};
                 axios
