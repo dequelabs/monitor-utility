@@ -112,38 +112,7 @@ be reported in this tool. You can un/mark projects
 as a "favorite" to include or exclude them.
 --------------------------------------------------
 `);
-      inquirer
-        .prompt([
-          {
-            type: "confirm",
-            name: "limit",
-            message: "Limit to specific month?",
-            default: true,
-          },
-          {
-            type: "input",
-            name: "date",
-            message: "Enter MM/YYYY to limit report:",
-            default: `${month}/${year}`,
-            validate: (input) => {
-              return new Promise((resolve, reject) => {
-                if (/^(0?[1-9]|1[012])[\/\-]\d{4}$/.test(input)) {
-                  resolve(true);
-                }
-                reject("Incorrect date format");
-              });
-            },
-            when: (answersPartTwo) => answersPartTwo.limit,
-          },
-        ])
-        .then((answersPartTwo) => {
-          answers.date = answersPartTwo.date;
-          answers.limit = answersPartTwo.limit;
-          reporter(answers);
-        })
-        .catch((error) => {
-          console.log(error);
-        });
+      reporter(answers);
     }
   })
   .catch((error) => {
