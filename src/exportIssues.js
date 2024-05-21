@@ -11,7 +11,7 @@ const severityLabels = {
 function correctDataForURL(issues, pageList) {
   for (var i = 0; i < issues.length; i++) {
     let relevantPage = pageList.find(
-      (x) => x.page_id === issues[i]["page"]["id"]
+      (x) => x.page_id === issues[i]["page"]["id"],
     );
     if (relevantPage?.url) {
       issues[i].url = relevantPage.url;
@@ -20,34 +20,30 @@ function correctDataForURL(issues, pageList) {
   return issues;
 }
 
-
-function addProjectNameInIssues(issues, projectDetails){
+function addProjectNameInIssues(issues, projectDetails) {
   for (var i = 0; i < issues.length; i++) {
+    issues[i]["project"]["name"] = projectDetails[0]["name"];
 
-    issues[i]['project']['name'] = projectDetails[0]['name']
+    let orgName = projectDetails[0]["organizationName"];
 
-    let orgName = projectDetails[0]['organizationName']
-
-    // get position of project key  
-    let projectPosition = Object.keys(issues[i]).indexOf('project')
+    // get position of project key
+    let projectPosition = Object.keys(issues[i]).indexOf("project");
 
     //convert object to keyValues ["key1", "value1"] ["key2", "value2"]
-    let keyValues = Object.entries(issues[i]); 
+    let keyValues = Object.entries(issues[i]);
     // insert key value before project key
-    keyValues.splice(projectPosition,0, ["organizationName",orgName]); 
+    keyValues.splice(projectPosition, 0, ["organizationName", orgName]);
 
     // convert keyValue to Object
-    let newIssues = Object.fromEntries(keyValues) 
+    let newIssues = Object.fromEntries(keyValues);
     // replace object with new object
-    issues[i] = newIssues
-
+    issues[i] = newIssues;
   }
   return issues;
 }
 
-
 async function getPages(data, agent) {
-  let url = data.url
+  let url = data.url;
   let totalPages = [];
   let countOfPages = 15000;
   let offsetMultipler = 0;
@@ -59,7 +55,7 @@ async function getPages(data, agent) {
       })
       .catch((error) => {
         console.error(
-          `Error: Could not get some pages for you on ${url} ${error}`
+          `Error: Could not get some pages for you on ${url} ${error}`,
         );
       });
     totalPages.push(...results.data.pageList);
@@ -86,7 +82,7 @@ async function getIssues(data, agent) {
       })
       .catch((error) => {
         console.error(
-          `Error: Could not get some projects for you on ${url} ${error}`
+          `Error: Could not get some projects for you on ${url} ${error}`,
         );
       });
     totalIssues.push(...results.data.issues);
@@ -97,21 +93,23 @@ async function getIssues(data, agent) {
   return totalIssues;
 }
 
-async function getProjectDetails(data, agent){
+async function getProjectDetails(data, agent) {
   const url = data.url;
   // Used for accessing Axe Monitor'
-    let projectDetails = [];
-    let results = await axios(data, { httpsAgent: agent })
-      .then((response) => {
-        return response;
-      })
-      .catch((error) => {
-        console.error(
-          `Error: Could not get some projects for you on ${url} ${error}`
-        );
-      });
-      results.data.project ? projectDetails.push(results.data.project) : projectDetails.push("NULL");
-      // results.data.project['name'] ? projectName = results.data.project['name']  : projectName = "" ;
+  let projectDetails = [];
+  let results = await axios(data, { httpsAgent: agent })
+    .then((response) => {
+      return response;
+    })
+    .catch((error) => {
+      console.error(
+        `Error: Could not get some projects for you on ${url} ${error}`,
+      );
+    });
+  results.data.project
+    ? projectDetails.push(results.data.project)
+    : projectDetails.push("NULL");
+  // results.data.project['name'] ? projectName = results.data.project['name']  : projectName = "" ;
   return projectDetails;
 }
 
@@ -177,10 +175,10 @@ async function writeIssues(issues, projectid) {
   for (var i = 0; i < issues.length; i++) {
     issues[i] = flattenJSON(issues[i]);
     // Map Severity Weight from Number to text.
-      issues[i].weight = severityLabels[issues[i].weight] ?? "unknown";
+    issues[i].weight = severityLabels[issues[i].weight] ?? "unknown";
   }
   let csv = convertJsonArrayToCSV(issues);
-  if(issues.length > 0){
+  if (issues.length > 0) {
     fs.writeFile(`issues-${projectid}.csv`, csv, "utf-8", (err) => {
       if (err) {
         console.error(err);
@@ -189,7 +187,6 @@ async function writeIssues(issues, projectid) {
       console.log(`issues-${projectid}.csv has been created`);
     });
   }
-  
 }
 module.exports = async (answers) => {
   // Extract the credentials and data passed to inquirer
@@ -197,7 +194,7 @@ module.exports = async (answers) => {
   let username = answers.username;
   let password = answers.password;
 
-  let reportType = answers.reportType
+  let reportType = answers.reportType;
 
   let projectids;
 
@@ -207,7 +204,7 @@ module.exports = async (answers) => {
 
   projectids.length > 1 ? (projectids = projectids.split(",")) : projectids;
 
-  if(reportType === "combine-project-reports"){
+  if (reportType === "combine-project-reports") {
     let combinedIssues = [];
     let combinedIssuesProjectIds = "";
     for (var projectid of projectids) {
@@ -236,7 +233,7 @@ module.exports = async (answers) => {
           password,
         },
       };
-  
+
       const projectNameData = {
         url: `${url}/worldspace/projects/resources/${projectid}`,
         method: "get",
@@ -252,30 +249,30 @@ module.exports = async (answers) => {
       let pageList = await getPages(pageData, agent);
       // Get all issues for the relevent project with the specified id
       console.log(`Getting all issues for project ${projectid}...`);
-  
+
       let issues = await getIssues(data, agent);
-  
+
       //Get project name with specified projct id
-      let projectDetails = await getProjectDetails(projectNameData, agent)
-    
+      let projectDetails = await getProjectDetails(projectNameData, agent);
+
       // Update issues with correct URL
       console.log(`Correcting data for project ${projectid}...`);
       issues = correctDataForURL(issues, pageList);
-      
-      //Add project name to in project object in issues 
-      issues = addProjectNameInIssues(issues, projectDetails)
-  
+
+      //Add project name to in project object in issues
+      issues = addProjectNameInIssues(issues, projectDetails);
+
       // Write the issues to files
       console.log(`Preparing to ouput data for project ${projectid}...`);
-  
-      combinedIssuesProjectIds === "" ? combinedIssuesProjectIds = `${projectid}` : combinedIssuesProjectIds = `${combinedIssuesProjectIds}-${projectid}`
+
+      combinedIssuesProjectIds === ""
+        ? (combinedIssuesProjectIds = `${projectid}`)
+        : (combinedIssuesProjectIds = `${combinedIssuesProjectIds}-${projectid}`);
 
       combinedIssues = [...combinedIssues, ...issues];
-
     }
     writeIssues(combinedIssues, combinedIssuesProjectIds);
-
-  }else{
+  } else {
     for (var projectid of projectids) {
       const agent = new https.Agent({
         rejectUnauthorized: false,
@@ -302,7 +299,7 @@ module.exports = async (answers) => {
           password,
         },
       };
-  
+
       const projectNameData = {
         url: `${url}/worldspace/projects/resources/${projectid}`,
         method: "get",
@@ -317,22 +314,22 @@ module.exports = async (answers) => {
       let pageList = await getPages(pageData, agent);
       // Get all issues for the relevent project with the specified id
       console.log(`Getting all issues for project ${projectid}...`);
-  
+
       let issues = await getIssues(data, agent);
-  
+
       //Get project name with specified projct id
-      let projectDetails = await getProjectDetails(projectNameData, agent)
-  
+      let projectDetails = await getProjectDetails(projectNameData, agent);
+
       // Update issues with correct URL
       console.log(`Correcting data for project ${projectid}...`);
       issues = correctDataForURL(issues, pageList);
-      
-      //Add project name to in project object in issues 
-      issues = addProjectNameInIssues(issues, projectDetails)
-  
+
+      //Add project name to in project object in issues
+      issues = addProjectNameInIssues(issues, projectDetails);
+
       // Write the issues to files
       console.log(`Preparing to ouput data for project ${projectid}...`);
-  
+
       writeIssues(issues, projectid);
     }
   }
