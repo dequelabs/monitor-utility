@@ -7,7 +7,7 @@ module.exports = {
 
       results.forEach((result) => {
         try {
-          if(result.report.report){
+          if (result.report.report) {
             const xor = "&*^%RJCTJF B#W($AU)O(SD D";
             const pid = result.report.report.id;
             const shareHash = sha1(`${pid}${xor}`);
@@ -30,10 +30,14 @@ module.exports = {
               Organization: result.org,
               "Total Pages": result.report.report.totalPages,
               "Total Issues": getTotal(),
-              "Pages having Minor or No Issues": result.report.report.good.toString(),
-              "Pages having Moderate Issues": result.report.report.fair.toString(),
-              "Pages having Serious Issues": result.report.report.serious.toString(),
-              "Pages having Critical Issues": result.report.report.critical.toString(),
+              "Pages having Minor or No Issues":
+                result.report.report.good.toString(),
+              "Pages having Moderate Issues":
+                result.report.report.fair.toString(),
+              "Pages having Serious Issues":
+                result.report.report.serious.toString(),
+              "Pages having Critical Issues":
+                result.report.report.critical.toString(),
               "Accessibility Score (%)": parseFloat(
                 result.report.report.score.toString(),
               )
