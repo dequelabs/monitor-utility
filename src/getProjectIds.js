@@ -32,7 +32,7 @@ module.exports = (url, username, password) => {
       })
       .catch((error) => {
         console.error(
-          `Error: Could not get some projects for you on ${url} ${error}`,
+          `Error: Could not get some projects for you on ${url} ${error}`
         );
       });
   });

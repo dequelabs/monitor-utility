@@ -11,7 +11,7 @@ const severityLabels = {
 function correctDataForURL(issues, pageList) {
   for (var i = 0; i < issues.length; i++) {
     let relevantPage = pageList.find(
-      (x) => x.page_id === issues[i]["page"]["id"],
+      (x) => x.page_id === issues[i]["page"]["id"]
     );
     if (relevantPage?.url) {
       issues[i].url = relevantPage.url;
@@ -55,7 +55,7 @@ async function getPages(data, agent) {
       })
       .catch((error) => {
         console.error(
-          `Error: Could not get some pages for you on ${url} ${error}`,
+          `Error: Could not get some pages for you on ${url} ${error}`
         );
       });
     totalPages.push(...results.data.pageList);
@@ -82,7 +82,7 @@ async function getIssues(data, agent) {
       })
       .catch((error) => {
         console.error(
-          `Error: Could not get some projects for you on ${url} ${error}`,
+          `Error: Could not get some projects for you on ${url} ${error}`
         );
       });
     totalIssues.push(...results.data.issues);
@@ -103,7 +103,7 @@ async function getProjectDetails(data, agent) {
     })
     .catch((error) => {
       console.error(
-        `Error: Could not get some projects for you on ${url} ${error}`,
+        `Error: Could not get some projects for you on ${url} ${error}`
       );
     });
   results.data.project
@@ -121,12 +121,12 @@ function convertJsonArrayToCSV(arr) {
   const separator = ",";
   let keys = "";
   // We do arr[1] because arr[0] keys are modified
-  if(arr[1]){
-     keys = Object.keys(arr[1]);;
-  }else{
+  if (arr[1]) {
+    keys = Object.keys(arr[1]);
+  } else {
     keys = Object.keys(arr[0]);
   }
- 
+
   // Add nessecary headers for side table.
 
   // CSV Generation from https://codeburst.io/export-objects-array-as-csv-using-typescript-643bf4f794d9

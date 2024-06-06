@@ -39,7 +39,7 @@ module.exports = {
               "Pages having Critical Issues":
                 result.report.report.critical.toString(),
               "Accessibility Score (%)": parseFloat(
-                result.report.report.score.toString(),
+                result.report.report.score.toString()
               )
                 .toFixed(2)
                 .toString(),
