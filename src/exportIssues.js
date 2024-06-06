@@ -121,7 +121,12 @@ function convertJsonArrayToCSV(arr) {
   const separator = ",";
   let keys = "";
   // We do arr[1] because arr[0] keys are modified
-  keys = Object.keys(arr[1]);
+  if(arr[1]){
+     keys = Object.keys(arr[1]);;
+  }else{
+    keys = Object.keys(arr[0]);
+  }
+ 
   // Add nessecary headers for side table.
 
   // CSV Generation from https://codeburst.io/export-objects-array-as-csv-using-typescript-643bf4f794d9
