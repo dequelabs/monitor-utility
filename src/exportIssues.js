@@ -2,13 +2,24 @@ const axios = require("axios");
 const { count } = require("console");
 const https = require("https");
 var fs = require("fs");
+// Flatten a singular JSON object
+function flattenJSON(obj = {}, res = {}, extraKey = "") {
+  for (key in obj) {
+    if (typeof obj[key] !== "object") {
+      res[extraKey + key] = obj[key];
+    } else {
+      flattenJSON(obj[key], res, `${extraKey}${key}.`);
+    }
+  }
+  return res;
+}
 const severityLabels = {
   0: "minor",
   1: "moderate",
   2: "serious",
   3: "critical",
 };
-function correctDataForURL(issues, pageList) {
+function correctDataForURL(issues, pageList, projectDetails) {
   for (var i = 0; i < issues.length; i++) {
     let relevantPage = pageList.find(
       (x) => x.page_id === issues[i]["page"]["id"],
@@ -16,30 +27,32 @@ function correctDataForURL(issues, pageList) {
     if (relevantPage?.url) {
       issues[i].url = relevantPage.url;
     }
+    addProjectNameInIssues(issues[i],projectDetails);
+    issues[i] = flattenJSON(issues[i]);
+    // Map Severity Weight from Number to text.
+    issues[i].weight = severityLabels[issues[i].weight] ?? "unknown";
   }
   return issues;
 }
 
-function addProjectNameInIssues(issues, projectDetails) {
-  for (var i = 0; i < issues.length; i++) {
-    issues[i]["project"]["name"] = projectDetails[0]["name"];
+function addProjectNameInIssues(issue, projectDetails) {
+  
+    issue["project"]["name"] = projectDetails[0]["name"];
 
     let orgName = projectDetails[0]["organizationName"];
 
     // get position of project key
-    let projectPosition = Object.keys(issues[i]).indexOf("project");
+    let projectPosition = Object.keys(issue).indexOf("project");
 
     //convert object to keyValues ["key1", "value1"] ["key2", "value2"]
-    let keyValues = Object.entries(issues[i]);
+    let keyValues = Object.entries(issue);
     // insert key value before project key
     keyValues.splice(projectPosition, 0, ["organizationName", orgName]);
 
     // convert keyValue to Object
     let newIssues = Object.fromEntries(keyValues);
     // replace object with new object
-    issues[i] = newIssues;
-  }
-  return issues;
+    issue = newIssues;
 }
 
 async function getPages(data, agent) {
@@ -151,47 +164,54 @@ function convertJsonArrayToCSV(arr) {
       .join("\n");
   return csvContent;
 }
-// Flatten a singular JSON object
-function flattenJSON(obj = {}, res = {}, extraKey = "") {
-  for (key in obj) {
-    if (typeof obj[key] !== "object") {
-      res[extraKey + key] = obj[key];
-    } else {
-      flattenJSON(obj[key], res, `${extraKey}${key}.`);
-    }
-  }
-  return res;
-}
+
 // Write all of the gathered issues to a JSON file and a CSV file.
 async function writeIssues(issues, projectid) {
-  var json = JSON.stringify(issues);
+  
+  if (issues.length >= 15000) {
+    const chunkSize = 15000; // Adjust chunk size as needed
+    for (let i = 0; i < issues.length; i += chunkSize) {
+      const chunk = issues.slice(i, i + chunkSize);
+      const chunkJson = JSON.stringify(chunk);
+      fs.writeFile(`issues-${projectid}-${i / chunkSize}.json`, chunkJson, (err) => {
+          if (err) {
+            console.error(err);
+            return;
+          }
+          console.log(`issues-${projectid}-${i / chunkSize}.json has been created`);
+      });
 
-  fs.writeFile(`issues-${projectid}.json`, json, (err) => {
-    if (err) {
-      console.error(err);
-      return;
+      let csv = convertJsonArrayToCSV(chunk);
+      fs.writeFile(`issues-${projectid}-${i / chunkSize}.csv`, csv, "utf-8", (err) => {
+          if (err) {
+            console.error(err);
+            return;
+          }
+          console.log(`issues-${projectid}.csv has been created`);
+      });
     }
-    console.log(`issues-${projectid}.json has been created`);
-  });
+    
+  } else {
+      let json = JSON.stringify(issues);
+      fs.writeFile(`issues-${projectid}.json`, json, (err) => {
+          if (err) {
+            console.error(err);
+            return;
+          }
+          console.log(`issues-${projectid}.json has been created`);
+      });
 
-  // Flatten the array of issues.
-  console.log(`Flattening data for project ${projectid}...`);
-  for (var i = 0; i < issues.length; i++) {
-    issues[i] = flattenJSON(issues[i]);
-    // Map Severity Weight from Number to text.
-    issues[i].weight = severityLabels[issues[i].weight] ?? "unknown";
-  }
-  let csv = convertJsonArrayToCSV(issues);
-  if (issues.length > 0) {
-    fs.writeFile(`issues-${projectid}.csv`, csv, "utf-8", (err) => {
-      if (err) {
-        console.error(err);
-        return;
-      }
-      console.log(`issues-${projectid}.csv has been created`);
-    });
+      let csv = convertJsonArrayToCSV(issues);
+      fs.writeFile(`issues-${projectid}.csv`, csv, "utf-8", (err) => {
+          if (err) {
+            console.error(err);
+            return;
+          }
+          console.log(`issues-${projectid}.csv has been created`);
+      });
   }
 }
+
 module.exports = async (answers) => {
   // Extract the credentials and data passed to inquirer
   let url = answers.url;
@@ -261,13 +281,15 @@ module.exports = async (answers) => {
 
       // Update issues with correct URL
       console.log(`Correcting data for project ${projectid}...`);
-      issues = correctDataForURL(issues, pageList);
+      let start = Date.now();
+      issues = correctDataForURL(issues, pageList,projectDetails);
+      console.log("time taken to execute the function correctDataForURL is ",(Date.now() - start)/60000 + " minutes");
 
       //Add project name to in project object in issues
-      issues = addProjectNameInIssues(issues, projectDetails);
+      //issues = addProjectNameInIssues(issues, projectDetails);
 
       // Write the issues to files
-      console.log(`Preparing to ouput data for project ${projectid}...`);
+      console.log(`Preparing to output data for project ${projectid}...`);
 
       combinedIssuesProjectIds === ""
         ? (combinedIssuesProjectIds = `${projectid}`)
@@ -323,16 +345,17 @@ module.exports = async (answers) => {
 
       //Get project name with specified projct id
       let projectDetails = await getProjectDetails(projectNameData, agent);
-
+      
       // Update issues with correct URL
       console.log(`Correcting data for project ${projectid}...`);
-      issues = correctDataForURL(issues, pageList);
-
+      let start = Date.now();
+      issues = correctDataForURL(issues, pageList,projectDetails);
+      console.log("time taken to execute the function correctDataForURL is ",(Date.now() - start)/60000 + " minutes");
       //Add project name to in project object in issues
-      issues = addProjectNameInIssues(issues, projectDetails);
+     // issues = addProjectNameInIssues(issues, projectDetails);
 
       // Write the issues to files
-      console.log(`Preparing to ouput data for project ${projectid}...`);
+      console.log(`Preparing to output data for project ${projectid}...`);
 
       writeIssues(issues, projectid);
     }
