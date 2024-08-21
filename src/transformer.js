@@ -26,6 +26,7 @@ module.exports = {
             };
             transformedResults.push({
               Site: result.report.report.name,
+              "Project Id": result.report.report.id,
               "Shared Report URL": shareUrl,
               Organization: result.org,
               "Total Pages": result.report.report.totalPages,
