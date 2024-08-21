@@ -1,6 +1,6 @@
 {
   "name": "monitor-utility",
-  "version": "2.1.5",
+  "version": "2.1.6",
   "description": "Utility for verbose outputs of axe Monitor data using a CLI",
   "main": "src/index.js",
   "scripts": {
