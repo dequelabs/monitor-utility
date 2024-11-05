@@ -28,6 +28,9 @@ module.exports = (url, username, password) => {
 
     return axios(data, { httpsAgent: agent })
       .then((response) => {
+        const JSESSIONID = response.headers['set-cookie'][0].split(';')[0].split('=')[1];
+        console.log('JSESSIONID is ', JSESSIONID);
+        axios.defaults.headers.common['Cookie'] = `JSESSIONID=${JSESSIONID}`;
         resolve(response.data.projects);
       })
       .catch((error) => {

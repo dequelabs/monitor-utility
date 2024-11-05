@@ -104,7 +104,6 @@ module.exports = async (answers) => {
                 const result = {};
                 axios
                   .get(`${url}/worldspace/projects/details/${project.id}`, {
-                    auth: { username, password },
                     httpsAgent: agent,
                   })
                   .then((data) => {
@@ -133,7 +132,6 @@ module.exports = async (answers) => {
                         .get(
                           `${url}/worldspace/project/summaryReport/${project.id}`,
                           {
-                            auth: { username, password },
                             httpsAgent: agent,
                           },
                         )
@@ -145,10 +143,10 @@ module.exports = async (answers) => {
                         })
                         .catch((err) => {
                           console.log("");
-
                           console.error(
                             `Failed to get the summary for ${project.id}`,
                           );
+                          console.error(err);
                           console.log("");
                           errors.concat(
                             `Error getting project summaryReport for ${project.id}.`,
