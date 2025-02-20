@@ -1,12 +1,13 @@
 const plimit = require("p-limit");
+const https = require("https");
 const axios = require("axios");
 const parseISO = require("date-fns/parseISO");
 const format = require("date-fns/format");
 const xlsx = require("xlsx");
 
-const getProjectIds = require("./getProjectIds");
+// const getProjectIds = require("./getProjectIds");
 const transformer = require("./transformer");
-const https = require("https");
+const {getProjectIds,  getScanDetails} = require("./utils");
 
 const agent = new https.Agent({
   rejectUnauthorized: false,
@@ -39,6 +40,8 @@ let urls;
 
 module.exports = async (answers) => {
   let { username, password, date, type, url } = answers;
+
+  console.log("answers", answers);
   // Remove trailing slash from URL that causes issues
   if (url.charAt(url.length - 1) == "/") {
     url = url.substring(0, url.length - 1);
@@ -71,10 +74,10 @@ module.exports = async (answers) => {
           projects[url] = [];
         }
         try {
-          projects[url] = await getProjectIds(url, username, password);
+          projects[url] = await getProjectIds(url, password);
           if (projects[url].length === 0) {
             errors.push(
-              `No favorited projects were found at Axe Monitor URL - ${url}`,
+              `No scans found that you have to at - ${url}`,
             );
           }
         } catch (err) {
@@ -98,61 +101,62 @@ module.exports = async (answers) => {
             () =>
               new Promise((resolve, reject) => {
                 index += 1;
+                console.log(JSON.stringify(project, null, 2));
                 console.log(
-                  `Fetching (${index} / ${projects[url].length}) of ${url} (Project ID:${project.id}, Project name:${project.name}, Project Org:${project.organizationName})`,
+                  `Fetching (${index} / ${projects[url].length}) of ${url} (Scan ID:${project.id}, Scan name:${project.name}${project.groups.length ? ', Scan group:' + project.groups.split(',').join(', ') : '.'})`,
                 );
                 const result = {};
+                const scanVsRunIds = {};
                 axios
-                  .get(`${url}/worldspace/projects/details/${project.id}`, {
-                    httpsAgent: agent,
-                  })
-                  .then((data) => {
-                    let lastScanDate = "";
-                    result.org = data.data.project.organizationName;
-                    try {
-                      lastScanDate = format(
-                        parseISO(data.data.project.last_scan_date),
-                        "MM/uu",
-                      );
-                      result.lastScanDate = data.data.project.last_scan_date;
-                    } catch (error) {
-                      // Date beyond any reasonable constraint if the original date does not display as a date
-                      lastScanDate = "01/1990";
-                      result.lastScanDate = "Not Reported";
-                    }
-                    if (date && lastScanDate !== `${month}/${year}`) {
-                      console.log(`Issue with dates for ${project.id}`);
-                      resolve(false);
-                    }
+                  .get(`${url}/v1/scans/${project.id}/runs`, {
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  httpsAgent: agent
+                }).then((data) => {
+                  scanVsRunIds[project.id] = {...data.data.scanRuns[0]};
+                  console.log("Scan vs run ids", scanVsRunIds);
+                  try {
+                    lastScanDate = format(
+                    parseISO(data.data.scanRuns[0].completedAt),
+                    "MM/uu",
+                    );
+                    // result.lastScanDate = data.data.project.last_scan_date;
+                  } catch (error) {
+                    // Date beyond any reasonable constraint if the original date does not display as a date
+                    lastScanDate = "01/1990";
+                    result.lastScanDate = "Not Reported";
+                  }
+                  if (date && lastScanDate !== `${month}/${year}`) {
+                    console.log(`Issue with dates for ${project.id}`);
+                    resolve(false);
+                  }
 
-                    result.customAttributes =
-                      data.data.project.customAttributes;
-                    setTimeout(async () => {
-                      await axios
-                        .get(
-                          `${url}/worldspace/project/summaryReport/${project.id}`,
-                          {
-                            httpsAgent: agent,
-                          },
-                        )
-                        .then((res) => {
-                          result.server = url;
-                          result.report = res.data;
-
-                          resolve(result);
-                        })
-                        .catch((err) => {
-                          console.log("");
-                          console.error(
-                            `Failed to get the summary for ${project.id}`,
-                          );
-                          console.error(err);
-                          console.log("");
-                          errors.concat(
-                            `Error getting project summaryReport for ${project.id}.`,
-                          );
-                        });
-                    }, 100);
+                  // result.customAttributes =
+                  //   data.data.project.customAttributes;
+                  // setTimeout(async () => {
+                  //   await axios
+                  //     .get(
+                  //       `${url}/worldspace/project/summaryReport/${project.id}`,
+                  //       {
+                  //         httpsAgent: agent,
+                  //       },
+                  //     )
+                  //     .then((res) => {
+                  //       result.server = url;
+                    //     })
+                    //     .catch((err) => {
+                    //       console.log("");
+                    //       console.error(
+                    //         `Failed to get the summary for ${project.id}`,
+                    //       );
+                    //       console.error(err);
+                    //       console.log("");
+                    //       errors.concat(
+                    //         `Error getting project summaryReport for ${project.id}.`,
+                    //       );
+                    //     });
+                    // }, 100);
                   })
                   .catch((err) => {
                     console.log("");

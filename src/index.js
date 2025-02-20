@@ -2,7 +2,8 @@ const inquirer = require("inquirer");
 const clear = require("clear");
 const version = require("../package.json").version;
 const reporter = require("./reporter");
-const exportIssues = require("./exportIssues");
+const scanReports = require("./scanReports");
+// const exportIssues = require("./exportIssues");
 const { el } = require("date-fns/locale");
 
 clear();
@@ -33,17 +34,18 @@ inquirer
           reject("Incorrect URL format");
         });
       },
-      default: "https://axemonitor.dequecloud.com",
+      default: "https://qa-rocky-perf.dequemonitordev.com/monitor-public-api",
     },
     {
       type: "input",
       name: "username",
       message: "Enter your Axe Monitor email address:",
+      default: "jaiprakash.rai@deque.com",
     },
     {
       type: "password",
       name: "password",
-      message: "Enter your Axe Monitor password:",
+      message: "Enter your Axe Monitor bearer token:",
     },
     {
       type: "list",
@@ -52,8 +54,8 @@ inquirer
       choices: [
         {
           name: "projects",
-          value: "projects",
-          description: "Export data about my favorited projects.",
+          value: "Scans",
+          description: "Export scans data",
         },
         {
           name: "issues",
@@ -66,7 +68,7 @@ inquirer
       type: "list",
       name: "reportType",
       message:
-        "Individual project issues or Combined issues of multiple projects",
+        "Individual project issues or Combined issues of multiple scans",
       when: (answers) => {
         if (answers.path === "issues") {
           return true;
@@ -100,7 +102,7 @@ inquirer
         ])
         .then((answersPartTwo) => {
           answers.projectid = answersPartTwo.projectid;
-          exportIssues(answers);
+          // exportIssues(answers);
         })
         .catch((error) => {
           console.log(error);
@@ -113,7 +115,7 @@ be reported in this tool. You can un/mark projects
 as a "favorite" to include or exclude them.
 --------------------------------------------------
 `);
-      reporter(answers);
+      scanReports(answers);
     }
   })
   .catch((error) => {

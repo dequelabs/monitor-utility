@@ -7,14 +7,13 @@ const agent = new https.Agent({
 
 module.exports = (url, username, password) => {
   const data = {
-    url: `${url}/worldspace/organizationprojects`,
+    url: `${url}/v1/scans`,
     method: "get",
     params: {
       limit: 15000,
     },
-    auth: {
-      username,
-      password,
+    headers: {
+      Authorization: `Bearer ${password}`,
     },
   };
 
@@ -28,10 +27,13 @@ module.exports = (url, username, password) => {
 
     return axios(data, { httpsAgent: agent })
       .then((response) => {
-        const JSESSIONID = response.headers['set-cookie'][0].split(';')[0].split('=')[1];
-        console.log('JSESSIONID is ', JSESSIONID);
-        axios.defaults.headers.common['Cookie'] = `JSESSIONID=${JSESSIONID}`;
-        resolve(response.data.projects);
+        axios.defaults.headers.common['Authorization'] = `Bearer ${password}`;
+        // const JSESSIONID = response.headers['set-cookie'][0].split(';')[0].split('=')[1];
+        // console.log('JSESSIONID is ', JSESSIONID);
+        // axios.defaults.headers.common['Cookie'] = `JSESSIONID=${JSESSIONID}`;
+        console.log("Getting projects for you...");
+        console.log("----->",response.data.scans);
+        resolve(response.data.scans);
       })
       .catch((error) => {
         console.error(
