@@ -2,6 +2,7 @@ const inquirer = require("inquirer");
 const axios = require("axios");
 const clear = require("clear");
 const version = require("../package.json").version;
+const utilClassInstance = require("./utils");
 const reporter = require("./reporter");
 const scanReports = require("./scanReports");
 const issueReports = require("./issueReports");
@@ -48,8 +49,7 @@ inquirer
     {
       type: "password",
       name: "password",
-      message: "Enter your Axe Monitor bearer token:",
-      default: "",
+      message: "Enter your Axe Monitor API key:",
     },
     {
       type: "list",
@@ -107,8 +107,22 @@ inquirer
       },
     },
   ])
-  .then((answers) => {
+  .then(async (answers) => {
     axios.defaults.headers.common["X-API-Key"] = answers.password;
+
+    axios.defaults.headers.common["X-Pagination-Per-Page"] = "15000";
+
+    //keep connection alive
+    axios.defaults.headers.common["Connection"] = "keep-alive";
+
+    //set axios default headers
+    axios.defaults.headers.common["Content-Type"] = "application/json";
+
+    console.log("Fetching project ids you have access to...");
+
+    let ids = await utilClassInstance.getProjectIds(answers.url);
+
+    console.log("Fetched project ids successfully!");
     
     if (answers.path === "issues" || answers.path === "pages") {
       console.log("Answers", answers);

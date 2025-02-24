@@ -2,7 +2,9 @@ const plimit = require("p-limit");
 const https = require("https");
 const cliProgress = require('cli-progress');
 
-const { getProjectIds, getScanDetails, generateExcel, getMultipleScanDetails } = require("./utils");
+const utilClassInstance = require("./utils");
+
+const { getScanDetails, generateExcel, getMultipleScanDetails } = utilClassInstance;
 
 const limit = plimit(2);
 
@@ -24,19 +26,25 @@ module.exports = async (answers) => {
 
   try {
     //allScans:[{id:Int, name: String, group:[String]}] = [{id: 1, name: 'https://www.example.com', group:[]},...];
-    let allScans = await getProjectIds(url, password);
+    let allScans = utilClassInstance.allAvailableProjects;
 
     const bar = new cliProgress.SingleBar({}, cliProgress.Presets.shades_classic);
 
     bar.start(allScans.length, 0);
 
-    for (let i = 0; i < allScans.length; i++) {
-      const { id: scanId, name, groups} = allScans[i];
+    const scanPromises = allScans.map(async (scan) => {
+      const { id: scanId, name, groups } = scan;
+      try {
       let scanDetails = await getScanDetails(url, scanId, password);
-      // increment the bar value
       results.push({ scanId, name, groups: groups.join(", "), ...scanDetails });
-      bar.update(i + 1);
-    }
+      } catch (error) {
+      console.error(`Error fetching details for scan ID ${scanId}:`, error);
+      } finally {
+        bar.increment();
+      }
+    });
+
+    await Promise.allSettled(scanPromises);
 
     bar.stop();
 
