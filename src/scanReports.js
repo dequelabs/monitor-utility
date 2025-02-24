@@ -2,13 +2,7 @@ const plimit = require("p-limit");
 const https = require("https");
 const cliProgress = require('cli-progress');
 
-// const getProjectIds = require("./getProjectIds");
-const transformer = require("./transformer");
-const { getProjectIds, getScanDetails, generateExcel } = require("./utils");
-
-const agent = new https.Agent({
-  rejectUnauthorized: false,
-});
+const { getProjectIds, getScanDetails, generateExcel, getMultipleScanDetails } = require("./utils");
 
 const limit = plimit(2);
 
@@ -46,7 +40,6 @@ module.exports = async (answers) => {
 
     bar.stop();
 
-    console.log("Results: ", results);
     await generateExcel(results, "scans.xlsx");
     console.log("Excel file generated successfully!");
   } catch (error) {

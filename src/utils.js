@@ -6,41 +6,64 @@ const agent = new https.Agent({
   rejectUnauthorized: false,
 });
 
+//set axios default headers
+axios.defaults.headers.common["Content-Type"] = "application/json";
+
 //export an object of functions
-module.exports = {
-  getProjectIds: async (url, token) => {
+const utils = {
+  getProjectIds: async (url) => {
     const data = {
       url: `${url}/v1/scans`,
       method: "get",
       params: {
         limit: 15000,
-      },
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+      }
     };
 
     const response = await axios(data, { httpsAgent: agent });
     return response.data.scans;
   },
 
-  //make a new server request for each scan ID to fetch run number
-  getScanDetails: async (url, scanId, token) => {
+  //make a new server request for a specific scan ID to fetch run number
+  getScanDetails: async (url, scanId) => {
     const data = {
       url: `${url}/v1/scans/${scanId}/runs`,
       method: "get",
-      headers: {
-        Authorization: `Bearer ${token}`,
+      params: {
+        limit: 15000,
       },
     };
 
     const response = await axios(data, { httpsAgent: agent });
-    let result = response.data.scanRuns[0] ;
+    let result = {scanId, ...response.data.scanRuns[0]};
     return result;
   },
 
+  getMultipleScanDetails: async (url, scanIds = []) => {
+    let allScanDataRequests = scanIds.map((scanId) => utils.getScanDetails(url, scanId));
+    let results =  Promise.allSettled(allScanDataRequests); 
+    return results;
+  },
+
+  getPagesData: async (url, scanId, runId) => {
+    const data = {
+      url: `${url}/v1/scans/${scanId}/runs/${runId}/pages`,
+      method: "get",
+    };
+
+    const response = await axios(data, { httpsAgent: agent });
+    return response.data.pages;
+  },
+  
+  getMultipleProjectsPageData: async (url, projectObjs = []) => {
+    //projectObjs = [{scanId: Int, runId: Int}, ...]
+    let allPageDataRequests = projectObjs.map((projectObj) => utils.getPagesData(url, projectObj.scanId, projectObj.runNumber));
+    let results =  Promise.allSettled(allPageDataRequests);
+    return results;
+  },
+
   //generate excel with given JS object
-  generateExcel: (data, fileName = "defaultName") => {
+  generateExcel: (data, fileName = "defaultName.xlsx") => {
     return new Promise((resolve, reject) => {
       try {
         const ws = xlsx.utils.json_to_sheet(data);
@@ -54,3 +77,5 @@ module.exports = {
     });
   },
 };
+
+module.exports = utils;

@@ -6,8 +6,6 @@ raw.json
 monthly.json
 .DS_Store
 .vscode
-~$report.xlsx
-*report-*.xlsx
+*.xlsx
+*.csv
 issues*.json
-issues*.csv
-issues*.xlsx
