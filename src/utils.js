@@ -184,18 +184,21 @@ class Utils {
     return results;
   }
 
-  async getIssuesOfProject(url, scanId, runId) {
+  async getIssuesOfProject(url, scanId, runId, page = 1) {
     const data = {
       url: `${url}/v1/scans/${scanId}/runs/${runId}/issues`,
+      method: "get",
       params: {
         status: "open",
       },
-      method: "get",
+      headers: {
+        "X-Pagination-Per-Page": IssuesPerRequest,
+        "X-Pagination-Page": page,
+      },
     };
 
     const response = await axios(data, { httpsAgent: agent });
-    console.log("Issues of project", url, scanId, response.data.issues.length);
-    return response.data.issues;
+    return {issues:response.data.issues, hasNext: response.headers["x-pagination-has-next"] === "true"};
   }
 
   delay(ms) {

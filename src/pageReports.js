@@ -1,5 +1,4 @@
 const plimit = require("p-limit");
-const https = require("https");
 const cliProgress = require("cli-progress");
 
 const utilClassInstance = require("./utils");
@@ -50,7 +49,7 @@ module.exports = async (answers) => {
   let errors = [];
 
   try {
-    // Fetch scan details for selected projects
+    // Fetch page details for selected projects
     let scanDetailsOfSelectedProjects =
       await utilClassInstance.getMultipleScanDetails(url, projectids);
 
