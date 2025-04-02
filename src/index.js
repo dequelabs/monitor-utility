@@ -3,12 +3,9 @@ const axios = require("axios");
 const clear = require("clear");
 const version = require("../package.json").version;
 const utilClassInstance = require("./utils");
-const reporter = require("./reporter");
 const scanReports = require("./scanReports");
 const issueReports = require("./issueReports");
 const pageReports = require("./pageReports");
-// const exportIssues = require("./exportIssues");
-const { el } = require("date-fns/locale");
 
 clear();
 
@@ -41,12 +38,6 @@ inquirer
       default: "https://dev-rocky.dequemonitordev.com/monitor-public-api",
     },
     {
-      type: "input",
-      name: "username",
-      message: "Enter your Axe Monitor email address:",
-      default: "jaiprakash.rai@deque.com",
-    },
-    {
       type: "password",
       name: "password",
       message: "Enter your Axe Monitor API key:",
@@ -64,12 +55,14 @@ inquirer
         {
           name: "pages",
           value: "pages",
-          description: "Export all of the pages scanned from a specific project.",
+          description:
+            "Export all of the pages scanned from a specific project.",
         },
         {
           name: "issues",
           value: "issues",
-          description: "Export all of the issues from a specific project or All projects.",
+          description:
+            "Export all of the issues from a specific project or All projects.",
         },
       ],
     },
@@ -110,7 +103,7 @@ inquirer
   .then(async (answers) => {
     axios.defaults.headers.common["X-API-Key"] = answers.password;
 
-    axios.defaults.headers.common["X-Pagination-Per-Page"] = "15000";
+    axios.defaults.headers.common["X-Pagination-Per-Page"] = "100";
 
     //keep connection alive
     axios.defaults.headers.common["Connection"] = "keep-alive";
@@ -118,31 +111,32 @@ inquirer
     //set axios default headers
     axios.defaults.headers.common["Content-Type"] = "application/json";
 
-    console.log("Fetching project ids you have access to...");
+    try {
+      let ids = await utilClassInstance.getProjectIds(answers.url);
 
-    let ids = await utilClassInstance.getProjectIds(answers.url);
+      if (answers.path === "issues" || answers.path === "pages") {
+        if (answers.path === "issues") {
+          issueReports(answers);
+        } else {
+          pageReports(answers);
+        }
+      } else {
+        console.log(`
+          --------------------------------------------------
+          All projects you have acccess to will 
+          be reported in this tool. This may take 
+          a few minutes.
+          --------------------------------------------------
+        `);
 
-    console.log("Fetched project ids successfully!");
-    
-    if (answers.path === "issues" || answers.path === "pages") {
-      console.log("Answers", answers);
-      if (answers.path === "issues") {
-        issueReports(answers);
-      }else {
-        pageReports(answers);
+        scanReports(answers);
       }
-    } else {
-      console.log(`
-        --------------------------------------------------
-        All projects you have acccess to will 
-        be reported in this tool. This may take 
-        a few minutes.
-        --------------------------------------------------
-      `);
-
-      scanReports(answers);
+    } catch (error) {
+      throw error;
     }
   })
   .catch((error) => {
-    console.error(error);
+    console.error(`Failed to generate as expected 🔥 : 
+      ${error.message || error}
+    `);
   });
