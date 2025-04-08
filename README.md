@@ -1,3 +1,7 @@
+# Branch Details:
+If your axe-Monitor instance version >=8.1 , then clone the branch name " https://github.com/dequelabs/monitor-utility/tree/main-8.1".  
+Else clone the **main** branch
+
 # Monitor Utility
 
 Automatically fetches data from monthly Monitor scans and generates an Excel file deliverable. Each row on the sheet is a Site representing a Project within an Organization. For each Project, a URL is given to the shared report, as well as a total count of pages, total issues found across the pages, and percentage of raw data (a calculated score). The issue counts are broken down into counts per grouping. The issue grouping categories are ARIA, Color, Forms, Keyboard, Language, Media, Name Role Value, Parsing, PDF, Semantics, Sensory and Visual Cues, Structure, Tables, Text Alternatives, and Time.
