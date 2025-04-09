@@ -1,16 +1,13 @@
 const inquirer = require("inquirer");
+const axios = require("axios");
 const clear = require("clear");
 const version = require("../package.json").version;
-const reporter = require("./reporter");
-const exportIssues = require("./exportIssues");
-const { el } = require("date-fns/locale");
+const utilClassInstance = require("./utils");
+const scanReports = require("./scanReports");
+const issueReports = require("./issueReports");
+const pageReports = require("./pageReports");
 
 clear();
-
-const date = new Date();
-const _month = date.getMonth() + 1;
-const month = _month < 10 ? `0${_month}` : _month;
-const year = date.getFullYear();
 
 console.log("\nMonitor Utility \nVersion: " + version);
 
@@ -25,7 +22,7 @@ inquirer
         return new Promise((resolve, reject) => {
           if (
             /(https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9]+\.[^\s]{2,}|www\.[a-zA-Z0-9]+\.[^\s]{2,})/.test(
-              input,
+              input
             )
           ) {
             resolve(true);
@@ -33,17 +30,12 @@ inquirer
           reject("Incorrect URL format");
         });
       },
-      default: "https://axemonitor.dequecloud.com",
-    },
-    {
-      type: "input",
-      name: "username",
-      message: "Enter your Axe Monitor email address:",
+      default: "https://axemonitor.dequecloud.com/",
     },
     {
       type: "password",
       name: "password",
-      message: "Enter your Axe Monitor password:",
+      message: "Enter your Axe Monitor API key:",
     },
     {
       type: "list",
@@ -51,71 +43,78 @@ inquirer
       message: "What are you trying to do today?",
       choices: [
         {
-          name: "projects",
-          value: "projects",
-          description: "Export data about my favorited projects.",
+          name: "scans",
+          value: "scans",
+          description: "Export scans data",
+        },
+        {
+          name: "pages",
+          value: "pages",
+          description:
+            "Export all of the pages scanned from a specific scan run(s).",
         },
         {
           name: "issues",
           value: "issues",
-          description: "Export all of the issues from a specific project.",
+          description:
+            "Export all of the issues from a specific scan run(s).",
         },
       ],
     },
     {
-      type: "list",
-      name: "reportType",
+      type: "input",
+      name: "projectid",
       message:
-        "Individual project issues or Combined issues of multiple projects",
+        "List all Scan Id(s) for which  you'd like to export, separated by a comma (i.e. 24,15,215). Scan Id can be found in your Axe Monitor URL (Example URL https://axemonitor.dequecloud.com/monitor/scans/16 with 16 being the Scan ID).",
       when: (answers) => {
-        if (answers.path === "issues") {
+        if (answers.path === "issues" || answers.path === "pages") {
           return true;
         }
       },
-      choices: [
-        {
-          name: "Combined issues of multiple projects",
-          value: "combine-project-reports",
-          description: "Export all of the issues from different project.",
-        },
-        {
-          name: "Individual project issues",
-          value: "individual-issues",
-          description: "Export all of the issues from a specific project.",
-        },
-      ],
     },
   ])
-  .then((answers) => {
-    if (answers.path === "issues") {
-      // Prompt for the project ID and then export all issues.
-      inquirer
-        .prompt([
-          {
-            type: "input",
-            name: "projectid",
-            message:
-              "List all Project Id(s) you'd like to export, separated by a comma (i.e. 24,15,215). Project Id can be found in your Axe Monitor URL (Example URL https://axemonitor.dequecloud.com/worldspace/organizationProject/summary/544 with 544 being the Project ID).",
-          },
-        ])
-        .then((answersPartTwo) => {
-          answers.projectid = answersPartTwo.projectid;
-          exportIssues(answers);
-        })
-        .catch((error) => {
-          console.log(error);
-        });
-    } else {
-      console.log(`
---------------------------------------------------
-Only projects you have marked as a "favorite" will
-be reported in this tool. You can un/mark projects
-as a "favorite" to include or exclude them.
---------------------------------------------------
-`);
-      reporter(answers);
+  .then(async (answers) => {
+
+    answers.url = answers.url.replace(/\/$/, "");
+
+    axios.defaults.baseURL = `${answers.url}/monitor-public-api`;
+
+    axios.defaults.headers.common["X-API-Key"] = answers.password;
+
+    axios.defaults.headers.common["X-Pagination-Per-Page"] = "100";
+
+    //keep connection alive
+    axios.defaults.headers.common["Connection"] = "keep-alive";
+
+    //set axios default headers
+    axios.defaults.headers.common["Content-Type"] = "application/json";
+
+    try {
+      await utilClassInstance.getProjectIds(answers.url);
+
+      if (answers.path === "issues" || answers.path === "pages") {
+        if (answers.path === "issues") {
+          issueReports(answers);
+        } else {
+          pageReports(answers);
+        }
+      } else {
+        console.log(`
+          --------------------------------------------------
+          All projects you have acccess to will 
+          be reported in this tool. This may take 
+          a few minutes.
+          --------------------------------------------------
+        `);
+
+        scanReports(answers);
+      }
+    } catch (error) {
+      throw error;
     }
   })
   .catch((error) => {
-    console.error(error);
+    console.error(`Failed to generate as expected 🔥 : 
+      ${error.message || error}
+    `);
   });
