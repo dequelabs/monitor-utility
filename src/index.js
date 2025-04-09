@@ -43,21 +43,21 @@ inquirer
       message: "What are you trying to do today?",
       choices: [
         {
-          name: "projects",
-          value: "projects",
+          name: "scans",
+          value: "scans",
           description: "Export scans data",
         },
         {
           name: "pages",
           value: "pages",
           description:
-            "Export all of the pages scanned from a specific project(s).",
+            "Export all of the pages scanned from a specific scan run(s).",
         },
         {
           name: "issues",
           value: "issues",
           description:
-            "Export all of the issues from a specific project(s).",
+            "Export all of the issues from a specific scan run(s).",
         },
       ],
     },
@@ -65,7 +65,7 @@ inquirer
       type: "input",
       name: "projectid",
       message:
-        "List all Project Id(s) you'd like to export, separated by a comma (i.e. 24,15,215). Project Id can be found in your Axe Monitor URL (Example URL https://axemonitor.dequecloud.com/worldspace/organizationProject/summary/544 with 544 being the Project ID).",
+        "List all Scan Id(s) for which  you'd like to export, separated by a comma (i.e. 24,15,215). Scan Id can be found in your Axe Monitor URL (Example URL https://axemonitor.dequecloud.com/monitor/scans/16 with 16 being the Scan ID).",
       when: (answers) => {
         if (answers.path === "issues" || answers.path === "pages") {
           return true;
