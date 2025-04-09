@@ -1,27 +1,15 @@
 const plimit = require("p-limit");
 const https = require("https");
-const cliProgress = require("cli-progress");
+const cliProgress = require("./progressbar");
 
 const utilClassInstance = require("./utils");
 
-const { getScanDetails, generateExcel, getMultipleScanDetails, delay } =
+const { getScanDetails, generateExcel, delay } =
   utilClassInstance;
 
 const limit = plimit(3);
 
 module.exports = async (answers) => {
-  let { password, url } = answers;
-  // Remove trailing slash from URL that causes issues
-  if (url.charAt(url.length - 1) == "/") {
-    url = url.substring(0, url.length - 1);
-  }
-  if (!answers || !password) {
-    console.log(
-      "Your Axe Monitor username and password are needed to run this application."
-    );
-    console.log("");
-    return false;
-  }
 
   const results = [];
 
@@ -34,9 +22,11 @@ module.exports = async (answers) => {
       return;
     }
 
-    const bar = new cliProgress.SingleBar({}, cliProgress.Presets.rect);
-
-    bar.start(allScans.length, 0);
+    const bar = new cliProgress(allScans.length, {
+      width: 40,
+      showCount: true,
+      message: "Downloading Scans:",
+    });
 
     //collect errors from all promises
     const errors = [];
@@ -50,11 +40,7 @@ module.exports = async (answers) => {
         let retries = 3;
         while (retries > 0) {
           try {
-            let { projectId, completedAt, ...scanDetails } = await getScanDetails(
-              url,
-              scanId,
-              password
-            );
+            let { projectId, completedAt, ...scanDetails } = await getScanDetails(scanId);
             results.push({
               "Project ID": scanId,
               "Project Name": name,
@@ -88,8 +74,6 @@ module.exports = async (answers) => {
     );
 
     await Promise.allSettled(scanPromises);
-
-    bar.stop();
 
     if (errors.length > 0) {
       console.log(`

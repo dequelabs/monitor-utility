@@ -9,11 +9,6 @@ const pageReports = require("./pageReports");
 
 clear();
 
-const date = new Date();
-const _month = date.getMonth() + 1;
-const month = _month < 10 ? `0${_month}` : _month;
-const year = date.getFullYear();
-
 console.log("\nMonitor Utility \nVersion: " + version);
 
 inquirer
@@ -35,7 +30,7 @@ inquirer
           reject("Incorrect URL format");
         });
       },
-      default: "https://dev-rocky.dequemonitordev.com/monitor-public-api",
+      default: "https://axemonitor.dequecloud.com/",
     },
     {
       type: "password",
@@ -56,35 +51,13 @@ inquirer
           name: "pages",
           value: "pages",
           description:
-            "Export all of the pages scanned from a specific project.",
+            "Export all of the pages scanned from a specific project(s).",
         },
         {
           name: "issues",
           value: "issues",
           description:
-            "Export all of the issues from a specific project or All projects.",
-        },
-      ],
-    },
-    {
-      type: "list",
-      name: "reportType",
-      message: "Individual projects or all projects?",
-      when: (answers) => {
-        if (answers.path === "projects") {
-          return true;
-        }
-      },
-      choices: [
-        {
-          name: "All projects",
-          value: "all-projects",
-          description: "Export all of the projects data.",
-        },
-        {
-          name: "Individual projects",
-          value: "individual-projects",
-          description: "Export scans data for individual projects.",
+            "Export all of the issues from a specific project(s).",
         },
       ],
     },
@@ -101,6 +74,11 @@ inquirer
     },
   ])
   .then(async (answers) => {
+
+    answers.url = answers.url.replace(/\/$/, "");
+
+    axios.defaults.baseURL = `${answers.url}/monitor-public-api`;
+
     axios.defaults.headers.common["X-API-Key"] = answers.password;
 
     axios.defaults.headers.common["X-Pagination-Per-Page"] = "100";
@@ -112,7 +90,7 @@ inquirer
     axios.defaults.headers.common["Content-Type"] = "application/json";
 
     try {
-      let ids = await utilClassInstance.getProjectIds(answers.url);
+      await utilClassInstance.getProjectIds(answers.url);
 
       if (answers.path === "issues" || answers.path === "pages") {
         if (answers.path === "issues") {

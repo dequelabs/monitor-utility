@@ -26,23 +26,18 @@ class Utils {
     this.getIssuesOfProject = this.getIssuesOfProject.bind(this);
   }
 
-  async getProjectIds(url) {
+  async getProjectIds() {
     let page = 1;
     let hasNext = true;
 
     const data = {
-      url: `${url}/v1/scans`,
+      url: `/v1/scans`,
       method: "get",
       headers: {
         "X-Pagination-Per-Page": ProjectIDsPerRequest,
         "X-Pagination-Page": page,
       },
     };
-
-    const ora = (await import("ora")).default;
-    const spinner = ora(
-      "Fetching all the projects info you have access to..."
-    ).start();
 
     try {
       while (hasNext) {
@@ -51,12 +46,6 @@ class Utils {
           response.data.scans
         );
 
-        if (page % 2 === 0) {
-          spinner.text = `Fetched ${page} pages...`;
-        } else {
-          spinner.text = `We are almost there...`;
-        }
-
         hasNext = response.headers["x-pagination-has-next"] === "true";
         if (hasNext) {
           page++;
@@ -64,21 +53,22 @@ class Utils {
         }
       }
     } catch (error) {
-      spinner.fail("Failed to fetch projects.");
       console.error(`
         Error fetching projects 🔥: 
         ${error.message || error}
       `);
     }
 
-    spinner.succeed(`Fetched all the projects you have access to.\n`);
+    console.log(`
+      Fetched all the projects you have access to.
+    `);
     return Promise.resolve(this.allAvailableProjects);
   }
 
   //make a new server request for a specific scan ID to fetch latest run number
-  async getScanDetails(url, scanId) {
+  async getScanDetails(scanId) {
     const data = {
-      url: `${url}/v1/scans/${scanId}/runs`,
+      url: `/v1/scans/${scanId}/runs`,
       method: "get",
       params: {
         needsReview: false,
@@ -142,9 +132,9 @@ class Utils {
     return Promise.resolve(result);
   }
 
-  async getMultipleScanDetails(url, scanIds = []) {
+  async getMultipleScanDetails(scanIds = []) {
     let allScanDataRequests = scanIds.map((scanId) =>
-      limit(() => this.getScanDetails(url, scanId))
+      limit(() => this.getScanDetails(scanId))
     );
 
     let results = await Promise.allSettled(allScanDataRequests);
@@ -155,9 +145,9 @@ class Utils {
     return Promise.resolve(results);
   }
 
-  async getPagesData(url, scanId, runId, page = 1) {
+  async getPagesData(scanId, runId, page = 1) {
     const data = {
-      url: `${url}/v1/scans/${scanId}/runs/${runId}/pages`,
+      url: `/v1/scans/${scanId}/runs/${runId}/pages`,
       method: "get",
       params: {
         status: "Completed",
@@ -175,18 +165,18 @@ class Utils {
     };
   }
 
-  async getMultipleProjectsPageData(url, projectObjs = []) {
+  async getMultipleProjectsPageData(projectObjs = []) {
     //projectObjs = [{scanId: Int, runId: Int}, ...]
     let allPageDataRequests = projectObjs.map((projectObj) =>
-      this.getPagesData(url, projectObj.scanId, projectObj.runNumber)
+      this.getPagesData(projectObj.scanId, projectObj.runNumber)
     );
     let results = await Promise.allSettled(allPageDataRequests);
     return results;
   }
 
-  async getIssuesOfProject(url, scanId, runId, page = 1) {
+  async getIssuesOfProject(scanId, runId, page = 1) {
     const data = {
-      url: `${url}/v1/scans/${scanId}/runs/${runId}/issues`,
+      url: `/v1/scans/${scanId}/runs/${runId}/issues`,
       method: "get",
       params: {
         status: "open",

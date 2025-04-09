@@ -1,12 +1,12 @@
 const plimit = require("p-limit");
-const cliProgress = require("cli-progress");
 
+const cliProgress = require("./progressbar");
 const utilClassInstance = require("./utils");
 
 const limit = plimit(4);
 
 module.exports = async (answers) => {
-  let { url, projectid } = answers;
+  let { projectid } = answers;
 
   let projectids = projectid.split(",").map((id) => parseInt(id));
 
@@ -51,7 +51,7 @@ module.exports = async (answers) => {
   try {
     // Fetch scan details for selected projects
     let scanDetailsOfSelectedProjects =
-      await utilClassInstance.getMultipleScanDetails(url, projectids);
+      await utilClassInstance.getMultipleScanDetails(projectids);
 
     scanDetailsOfSelectedProjects = scanDetailsOfSelectedProjects.map(
       (scan) => ({
@@ -67,16 +67,11 @@ module.exports = async (answers) => {
       0
     );
 
-    const progressBar = new cliProgress.SingleBar(
-      {
-        format: `Fetching issues | {bar} | {percentage}% || {value}/{total} Issues`,
-        hideCursor: true,
-        forceRedraw: true,
-      },
-      cliProgress.Presets.rect
-    );
-
-    progressBar.start(totalIssues, 0);
+    const progressBar = new cliProgress(totalIssues, {
+      message: "Downloading Issues:",
+      width: 40,
+      showCount: true
+    });
 
     // Fetch pages for each project
     const projectIssuesPromises = scanDetailsOfSelectedProjects.map(
@@ -89,7 +84,7 @@ module.exports = async (answers) => {
           try {
             while (hasNext) {
               const { issues: issuesData, hasNext: hasNextPage } =
-                await getIssuesOfProject(url, scanId, runNumber, page);
+                await getIssuesOfProject(scanId, runNumber, page);
               hasNext = hasNextPage;
 
               if (hasNext) {
@@ -157,8 +152,6 @@ module.exports = async (answers) => {
     );
 
     await Promise.allSettled(projectIssuesPromises);
-
-    progressBar.stop();
 
     // Generate Excel file
     await generateExcel(results, `Issues-${Date.now()}.xlsx`);

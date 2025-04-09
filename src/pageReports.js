@@ -1,12 +1,12 @@
 const plimit = require("p-limit");
-const cliProgress = require("cli-progress");
 
+const cliProgress = require("./progressbar");
 const utilClassInstance = require("./utils");
 
 const limit = plimit(4);
 
 module.exports = async (answers) => {
-  let { url, projectid } = answers;
+  let { projectid } = answers;
 
   let projectids = projectid.split(",").map((id) => parseInt(id));
 
@@ -51,7 +51,7 @@ module.exports = async (answers) => {
   try {
     // Fetch page details for selected projects
     let scanDetailsOfSelectedProjects =
-      await utilClassInstance.getMultipleScanDetails(url, projectids);
+      await utilClassInstance.getMultipleScanDetails(projectids);
 
     scanDetailsOfSelectedProjects = scanDetailsOfSelectedProjects.map(
       (scan) => ({
@@ -66,16 +66,12 @@ module.exports = async (answers) => {
       (sum, { totalPages }) => sum + totalPages,
       0
     );
-    const progressBar = new cliProgress.SingleBar(
-      {
-        format: `Fetching pages | {bar} | {percentage}% || {value}/{total} Pages`,
-        hideCursor: true,
-        forceRedraw: true,
-      },
-      cliProgress.Presets.rect
-    );
 
-    progressBar.start(totalPages, 0);
+    const progressBar = new cliProgress(totalPages, {
+      message: "Downloading Pages:",
+      width: 40,
+      showCount: true
+    });
 
     // Fetch pages for each project
     const projectPromises = scanDetailsOfSelectedProjects.map(
@@ -88,7 +84,7 @@ module.exports = async (answers) => {
           try {
             while (hasNext) {
               const { pages: pagesData, hasNext: hasNextPage } =
-                await getPagesData(url, scanId, runNumber, page);
+                await getPagesData(scanId, runNumber, page);
               hasNext = hasNextPage;
 
               if (hasNext) {
@@ -154,8 +150,6 @@ module.exports = async (answers) => {
     );
 
     await Promise.allSettled(projectPromises);
-
-    progressBar.stop();
 
     // Generate Excel file
     await generateExcel(results, `pages-${Date.now()}.xlsx`);
