@@ -10,7 +10,11 @@ Automatically fetches data from monthly Monitor scans and generates an Excel fil
 
 You will need access to the Monitor instance you want to use, including projects and scans within the organization.
 First step is to install the dependent packages by executing 'npm install' from the root of the project code.
-To run the code, from the root run `npm run report`. Enter the Monitor URL, making sure it does not end with a slash. Login with your email and password when prompted.
+To run the code, from the root run 
+1. `npm run report`. 
+2. Enter the Monitor URL, making sure it does not end with a slash.
+3. Authenticate by providing API key.
+4. Select your desired operation, and press enter. Wait for sometime to get the generated report.
 
 ## Code Design
 
