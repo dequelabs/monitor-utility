@@ -70,7 +70,7 @@ module.exports = async (answers) => {
     const progressBar = new cliProgress(totalPages, {
       message: "Downloading Pages:",
       width: 40,
-      showCount: true
+      showCount: true,
     });
 
     // Fetch pages for each project
@@ -122,12 +122,11 @@ module.exports = async (answers) => {
                 status,
                 ...pageMeta
               }) => ({
-                "Project Id": scanId,
-                "Project Name": projectNames[scanId],
+                "Scan Id": scanId,
+                "Scan Name": projectNames[scanId],
                 "Page Id": pageId,
                 "Test URL": testUrl,
                 "Page Title": testPageTitle,
-                "Reason for Failure": reasonForFailure,
                 "Critical Issues": totalCriticalIssues,
                 "Serious Issues": totalSeriousIssues,
                 "Moderate Issues": totalModerateIssues,

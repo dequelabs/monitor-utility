@@ -30,7 +30,7 @@ inquirer
           reject("Incorrect URL format");
         });
       },
-      default: "https://axemonitor.dequecloud.com/",
+      default: "https://axemonitor.dequecloud.com",
     },
     {
       type: "password",
@@ -56,8 +56,7 @@ inquirer
         {
           name: "issues",
           value: "issues",
-          description:
-            "Export all of the issues from a specific scan run(s).",
+          description: "Export all of the issues from a specific scan run(s).",
         },
       ],
     },
@@ -72,9 +71,24 @@ inquirer
         }
       },
     },
+    {
+      type: "list",
+      name: "includeNeedsReview",
+      message:
+        "Would you like to include issues that are marked as 'Needs Review'?",
+      choices: [
+        { name: "Yes, continue", value: true },
+        { name: "No", value: false },
+      ],
+      default: 1,
+      when: (answers) => {
+        if (answers.path === "issues") {
+          return true;
+        }
+      },
+    },
   ])
   .then(async (answers) => {
-
     answers.url = answers.url.replace(/\/$/, "");
 
     axios.defaults.baseURL = `${answers.url}/monitor-public-api`;

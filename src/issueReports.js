@@ -6,7 +6,7 @@ const utilClassInstance = require("./utils");
 const limit = plimit(4);
 
 module.exports = async (answers) => {
-  let { projectid } = answers;
+  let { projectid, includeNeedsReview } = answers;
 
   let projectids = projectid.split(",").map((id) => parseInt(id));
 
@@ -51,7 +51,10 @@ module.exports = async (answers) => {
   try {
     // Fetch scan details for selected projects
     let scanDetailsOfSelectedProjects =
-      await utilClassInstance.getMultipleScanDetails(projectids);
+      await utilClassInstance.getMultipleScanDetails(
+        projectids,
+        includeNeedsReview
+      );
 
     scanDetailsOfSelectedProjects = scanDetailsOfSelectedProjects.map(
       (scan) => ({
@@ -70,7 +73,7 @@ module.exports = async (answers) => {
     const progressBar = new cliProgress(totalIssues, {
       message: "Downloading Issues:",
       width: 40,
-      showCount: true
+      showCount: true,
     });
 
     // Fetch pages for each project
@@ -91,11 +94,17 @@ module.exports = async (answers) => {
                 page++;
               }
 
-              let needReviewFalseIssues = issuesData.filter(issue => issue.needsReview === false);
+              let userPrefferedIssues = issuesData;
 
-              projectIssues = projectIssues.concat(needReviewFalseIssues);
+              if (!includeNeedsReview) {
+                userPrefferedIssues = issuesData.filter(
+                  (issue) => issue.needsReview === false
+                );
+              }
 
-              progressBar.increment(needReviewFalseIssues.length);
+              projectIssues = projectIssues.concat(userPrefferedIssues);
+
+              progressBar.increment(userPrefferedIssues.length);
             }
           } catch (error) {
             errors.push({ scanId, error: error.message || error });
@@ -124,8 +133,8 @@ module.exports = async (answers) => {
                 testUrl,
                 testPageTitle,
               }) => ({
-                "Project Id": scanId,
-                "Project Name": projectNames[scanId],
+                "Scan Id": scanId,
+                "Scan Name": projectNames[scanId],
                 "Issue Id": issueId,
                 "Rule Id": ruleId,
                 Description: description,
@@ -134,16 +143,17 @@ module.exports = async (answers) => {
                 Impact: impact,
                 "Issue Group": issueGrouping,
                 "Is Experimental": isExperimental,
+                ...(includeNeedsReview ? { "Needs Review": needsReview } : {}),
                 "Is Manual": isManual,
                 Summary: summary,
-                Selector: selector,
+                Selector: selector[0],
                 "Source Code": source,
                 Tags: tags.join(", "),
                 IGT: igt,
                 "Test Name": testName,
                 "Test Url": testUrl,
                 "Test Page Title": testPageTitle,
-                "Created-At": createdAt
+                "Created-At": createdAt,
               })
             )
           );

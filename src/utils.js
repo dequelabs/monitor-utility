@@ -8,6 +8,7 @@ const {
   ProjectsMetaPerRequest,
   PagesPerRequest,
   IssuesPerRequest,
+  ViolationCategory,
 } = require("./constants");
 
 const agent = new https.Agent({
@@ -66,12 +67,12 @@ class Utils {
   }
 
   //make a new server request for a specific scan ID to fetch latest run number
-  async getScanDetails(scanId) {
+  async getScanDetails(scanId, needsReview = false) {
     const data = {
       url: `/v1/scans/${scanId}/runs`,
       method: "get",
       params: {
-        needsReview: false,
+        needsReview,
       },
       headers: {
         "X-Pagination-Per-Page": ProjectsMetaPerRequest,
@@ -108,16 +109,23 @@ class Utils {
     } = issues;
     let { critical: criticalPages = 0, completed: totalPages = 0 } =
       pages || {};
-    let violations = violationGroups.reduce((accumulator, group) => {
-      let { name, pageCount } = group;
-      accumulator[`${name.toUpperCase()} (Pages)`] = pageCount;
-      return accumulator;
-    }, {});
+    // Build violations object with page counts, merged with ViolationCategory, and sorted by key
+    let violations = Object.fromEntries(
+      Object.entries({
+        ...ViolationCategory,
+        ...Object.fromEntries(
+          (violationGroups || []).map(({ name, pageCount }) => [
+            `${name.toUpperCase()}`,
+            pageCount,
+          ])
+        ),
+      }).sort(([a], [b]) => a.localeCompare(b))
+    );
 
     let result = {
       projectId: scanId,
       "Run-Number": runNumber,
-      Score: `${score * 100}%`,
+      Score: Math.round(score * 10000) / 100,
       "Critical Issues": criticalIssues,
       "Serious Issues": seriousIssues,
       "Moderate Issues": moderateIssues,
@@ -127,14 +135,13 @@ class Utils {
       "Completed Pages": totalPages,
       ...moreInfo,
       ...violations,
-      completedAt,
     };
-    return Promise.resolve(result);
+    return Promise.resolve({ ...result, completedAt });
   }
 
-  async getMultipleScanDetails(scanIds = []) {
+  async getMultipleScanDetails(scanIds = [], needsReview = false) {
     let allScanDataRequests = scanIds.map((scanId) =>
-      limit(() => this.getScanDetails(scanId))
+      limit(() => this.getScanDetails(scanId, needsReview))
     );
 
     let results = await Promise.allSettled(allScanDataRequests);
@@ -188,7 +195,10 @@ class Utils {
     };
 
     const response = await axios(data, { httpsAgent: agent });
-    return {issues:response.data.issues, hasNext: response.headers["x-pagination-has-next"] === "true"};
+    return {
+      issues: response.data.issues,
+      hasNext: response.headers["x-pagination-has-next"] === "true",
+    };
   }
 
   delay(ms) {

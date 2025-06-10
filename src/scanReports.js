@@ -4,13 +4,11 @@ const cliProgress = require("./progressbar");
 
 const utilClassInstance = require("./utils");
 
-const { getScanDetails, generateExcel, delay } =
-  utilClassInstance;
+const { getScanDetails, generateExcel, delay } = utilClassInstance;
 
 const limit = plimit(3);
 
-module.exports = async (answers) => {
-
+module.exports = async ({ url }) => {
   const results = [];
 
   try {
@@ -40,13 +38,22 @@ module.exports = async (answers) => {
         let retries = 3;
         while (retries > 0) {
           try {
-            let { projectId, completedAt, ...scanDetails } = await getScanDetails(scanId);
+            let {
+              projectId,
+              completedAt,
+              axeVersion,
+              standard,
+              ...scanDetails
+            } = await getScanDetails(scanId);
             results.push({
               "Project ID": scanId,
               "Project Name": name,
+              "Project URL": `${url}/monitor/scans/${scanId}`,
               Groups: groupsNameString,
               ...scanDetails,
-              "Completed At": completedAt
+              "Axe Version": axeVersion,
+              Standard: standard,
+              "Completed At": completedAt,
             });
             break;
           } catch (error) {
@@ -91,6 +98,8 @@ module.exports = async (answers) => {
 
       `);
     }
+
+    results.sort((a, b) => a["Project ID"] - b["Project ID"]);
 
     await generateExcel(results, `scans-${Date.now()}.xlsx`);
 
