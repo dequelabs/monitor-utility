@@ -28,6 +28,10 @@ class CustomProgressBar {
     // Track terminal state
     this.isTTY = process.stdout.isTTY;
     this.lastOutputLength = 0;
+    this.isActive = false;
+
+    // Buffer for pending messages
+    this.pendingMessages = [];
 
     // Ensure we start fresh
     this.clearLine();
@@ -41,6 +45,52 @@ class CustomProgressBar {
       // Move cursor to beginning of line and clear entire line
       process.stdout.write("\r\x1b[2K");
     }
+  }
+
+  /**
+   * Log a message without interfering with the progress bar
+   */
+  log(message, type = 'info') {
+    if (!this.isTTY) {
+      console.log(message);
+      return;
+    }
+
+    if (this.isActive) {
+      // Clear current progress bar line
+      this.clearLine();
+      
+      // Print the message
+      if (type === 'error') {
+        console.error(message);
+      } else if (type === 'warn') {
+        console.warn(message);
+      } else {
+        console.log(message);
+      }
+      
+      // Re-render the progress bar
+      this.render();
+    } else {
+      // Buffer the message if progress bar isn't active
+      this.pendingMessages.push({ message, type });
+    }
+  }
+
+  /**
+   * Flush any pending messages
+   */
+  flushPendingMessages() {
+    for (const { message, type } of this.pendingMessages) {
+      if (type === 'error') {
+        console.error(message);
+      } else if (type === 'warn') {
+        console.warn(message);
+      } else {
+        console.log(message);
+      }
+    }
+    this.pendingMessages = [];
   }
 
   increment(increment = 1) {
@@ -81,6 +131,13 @@ class CustomProgressBar {
       }
       return;
     }
+
+    // Flush any pending messages before starting
+    if (!this.isActive && this.pendingMessages.length > 0) {
+      this.flushPendingMessages();
+    }
+
+    this.isActive = true;
 
     // Calculate percentage
     const percent = Math.floor((this.current / this.total) * 100);
@@ -141,6 +198,7 @@ class CustomProgressBar {
     this.lastOutputLength = output.length;
 
     if (this.isCompleted) {
+      this.isActive = false;
       if (this.options.clear) {
         process.stdout.write("\n");
       }
@@ -176,8 +234,10 @@ class CustomProgressBar {
     this.current = 0;
     this.isCompleted = false;
     this.hasStarted = false;
+    this.isActive = false;
     this.startTime = Date.now();
     this.lastRender = 0;
+    this.pendingMessages = [];
     this.clearLine();
   }
 
@@ -185,6 +245,7 @@ class CustomProgressBar {
     if (this.isTTY && !this.isCompleted) {
       this.complete();
     }
+    this.isActive = false;
   }
 }
 

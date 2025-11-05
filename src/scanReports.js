@@ -26,6 +26,9 @@ module.exports = async ({ url }) => {
       message: "Downloading Scans:",
     });
 
+    // Set the progress bar reference in utils for proper logging
+    utilClassInstance.setProgressBar(bar);
+
     //collect errors from all promises
     const errors = [];
 
@@ -62,7 +65,12 @@ module.exports = async ({ url }) => {
               error.response.status === 429 &&
               retries > 0
             ) {
-              console.warn(`Rate limit hit for scan ID ${scanId}. Retrying...`);
+              const message = `Rate limit hit for scan ID ${scanId}. Retrying...`;
+              if (bar && typeof bar.log === 'function') {
+                bar.log(message, 'warn');
+              } else {
+                console.warn(message);
+              }
               await delay(1000 * (4 - retries));
               retries--;
             } else {
@@ -83,6 +91,9 @@ module.exports = async ({ url }) => {
     );
 
     await Promise.allSettled(scanPromises);
+
+    // Finish the progress bar
+    bar.finish();
 
     if (errors.length > 0) {
       console.log(`

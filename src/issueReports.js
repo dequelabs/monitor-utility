@@ -13,14 +13,15 @@ module.exports = async (answers) => {
   const { allAvailableProjects, getIssuesOfProject, generateExcel, generateJSON } =
     utilClassInstance;
 
-  // Validate project IDs
+  // Validate project IDs (store messages for later logging)
+  const validationMessages = [];
   projectids.forEach((id) => {
     if (isNaN(id)) {
-      console.log(`Invalid project ID: ${id} 👾`);
+      validationMessages.push(`Invalid project ID: ${id} 👾`);
     } else if (
       allAvailableProjects.findIndex((project) => project.id === id) === -1
     ) {
-      console.log(
+      validationMessages.push(
         `Project with ID ${id} is not available or inaccessible. Ignoring it. 🫠`
       );
     }
@@ -76,6 +77,14 @@ module.exports = async (answers) => {
       showCount: true,
     });
 
+    // Set the progress bar reference in utils for proper logging
+    utilClassInstance.setProgressBar(progressBar);
+
+    // Log any validation messages now that we have a progress bar
+    validationMessages.forEach(message => {
+      progressBar.log(message, 'warn');
+    });
+
     // Fetch pages for each project
     const projectIssuesPromises = scanDetailsOfSelectedProjects.map(
       ({ scanId, runNumber }) =>
@@ -108,6 +117,8 @@ module.exports = async (answers) => {
             }
           } catch (error) {
             errors.push({ scanId, error: error.message || error });
+            const errorMessage = `Error fetching issues for scan ${scanId}: ${error.message || error}`;
+            progressBar.log(errorMessage, 'error');
           }
 
           results = results.concat(
@@ -162,6 +173,9 @@ module.exports = async (answers) => {
     );
 
     await Promise.allSettled(projectIssuesPromises);
+
+    // Finish the progress bar
+    progressBar.finish();
 
     await generateJSON(
       results,

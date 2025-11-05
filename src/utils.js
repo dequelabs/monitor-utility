@@ -29,6 +29,11 @@ class Utils {
     this.getIssuesOfProject = this.getIssuesOfProject.bind(this);
     this.requestCount = 0;
     this.requestStartTime = Date.now();
+    this.progressBar = null;
+  }
+
+  setProgressBar(progressBar) {
+    this.progressBar = progressBar;
   }
 
   async getProjectIds() {
@@ -56,10 +61,16 @@ class Utils {
         }
       }
     } catch (error) {
-      console.error(`
+      const errorMessage = `
         Error fetching projects 🔥: 
         ${error.message || error}
-      `);
+      `;
+      
+      if (this.progressBar && typeof this.progressBar.log === 'function') {
+        this.progressBar.log(errorMessage, 'error');
+      } else {
+        console.error(errorMessage);
+      }
     }
 
     console.log(`
@@ -226,9 +237,14 @@ class Utils {
 
     if (this.requestCount >= RATE_LIMIT.REQUESTS_PER_HOUR) {
       const waitTime = RATE_LIMIT.HOUR_IN_MS - (now - this.requestStartTime);
-      console.warn(
-        `⚠️ Hourly limit reached. Waiting ${Math.ceil(waitTime / 1000)} seconds...`
-      );
+      const message = `⚠️ Hourly limit reached. Waiting ${Math.ceil(waitTime / 1000)} seconds...`;
+      
+      if (this.progressBar && typeof this.progressBar.log === 'function') {
+        this.progressBar.log(message, 'warn');
+      } else {
+        console.warn(message);
+      }
+      
       await this.delay(waitTime);
       this.requestCount = 0;
       this.requestStartTime = Date.now();
@@ -251,9 +267,14 @@ class Utils {
         const status = err?.response?.status;
         if (status === 429 || status === 503 || !status) {
           const wait = baseDelay * Math.pow(2, i);
-          console.warn(
-            `⚠️ ${status || "Network"} error. Retrying in ${wait} ms...`
-          );
+          const message = `⚠️ ${status || "Network"} error. Retrying in ${wait} ms...`;
+          
+          if (this.progressBar && typeof this.progressBar.log === 'function') {
+            this.progressBar.log(message, 'warn');
+          } else {
+            console.warn(message);
+          }
+          
           await this.delay(wait);
         } else {
           throw err;
@@ -329,12 +350,31 @@ class Utils {
     const rejected = results.filter(r => r.status === "rejected");
 
     if (rejected.length > 0) {
-      console.error(`\n❌ ${operation} - Failed: ${rejected.length}/${results.length}`);
+      const errorMessage = `\n❌ ${operation} - Failed: ${rejected.length}/${results.length}`;
+      
+      if (this.progressBar && typeof this.progressBar.log === 'function') {
+        this.progressBar.log(errorMessage, 'error');
+      } else {
+        console.error(errorMessage);
+      }
+      
       rejected.forEach((result, index) => {
         const identifier = identifiers[results.indexOf(result)] || `Item ${index + 1}`;
-        console.error(`  • ${identifier}: ${result.reason}`);
+        const detailMessage = `  • ${identifier}: ${result.reason}`;
+        
+        if (this.progressBar && typeof this.progressBar.log === 'function') {
+          this.progressBar.log(detailMessage, 'error');
+        } else {
+          console.error(detailMessage);
+        }
       });
-      console.error(''); // Empty line for readability
+      
+      // Empty line for readability
+      if (this.progressBar && typeof this.progressBar.log === 'function') {
+        this.progressBar.log('', 'info');
+      } else {
+        console.error('');
+      }
     }
 
     return {
