@@ -2,6 +2,7 @@ const axios = require("axios");
 const https = require("https");
 const xlsx = require("xlsx");
 const plimit = require("p-limit");
+const fs = require("fs");
 
 const {
   ProjectIDsPerRequest,
@@ -9,6 +10,7 @@ const {
   PagesPerRequest,
   IssuesPerRequest,
   ViolationCategory,
+  RATE_LIMIT,
 } = require("./constants");
 
 const agent = new https.Agent({
@@ -25,6 +27,8 @@ class Utils {
     this.getMultipleScanDetails = this.getMultipleScanDetails.bind(this);
     this.getPagesData = this.getPagesData.bind(this);
     this.getIssuesOfProject = this.getIssuesOfProject.bind(this);
+    this.requestCount = 0;
+    this.requestStartTime = Date.now();
   }
 
   async getProjectIds() {
@@ -42,10 +46,8 @@ class Utils {
 
     try {
       while (hasNext) {
-        const response = await axios(data, { httpsAgent: agent });
-        this.allAvailableProjects = this.allAvailableProjects.concat(
-          response.data.scans
-        );
+        const response = await this.retryAxios(data);
+        this.allAvailableProjects.push(...response.data.scans);
 
         hasNext = response.headers["x-pagination-has-next"] === "true";
         if (hasNext) {
@@ -80,12 +82,12 @@ class Utils {
       },
     };
 
-    const response = await axios(data, { httpsAgent: agent });
+    const response = await this.retryAxios(data);
     let {
       runNumber,
       status,
-      issues,
-      pages,
+      issues = {critical: 0, serious: 0, moderate: 0, minor: 0, total: 0},
+      pages = {critical : 0, completed: 0},
       violationGroups,
       score,
       queuedAt,
@@ -145,11 +147,13 @@ class Utils {
     );
 
     let results = await Promise.allSettled(allScanDataRequests);
-    results = results
-      .filter((scan) => scan.status === "fulfilled")
-      .map((scan) => scan.value);
+    const { fulfilled } = this.logSettledResults(
+      results, 
+      'Scan Details Fetch', 
+      scanIds.map(id => `Scan ID: ${id}`)
+    );
 
-    return Promise.resolve(results);
+    return Promise.resolve(fulfilled);
   }
 
   async getPagesData(scanId, runId, page = 1) {
@@ -165,7 +169,7 @@ class Utils {
       },
     };
 
-    const response = await axios(data, { httpsAgent: agent });
+    const response = await this.retryAxios(data);
     return {
       pages: response.data.pages,
       hasNext: response.headers["x-pagination-has-next"] === "true",
@@ -178,44 +182,137 @@ class Utils {
       this.getPagesData(projectObj.scanId, projectObj.runNumber)
     );
     let results = await Promise.allSettled(allPageDataRequests);
+    
+    const { fulfilled, rejected } = this.logSettledResults(
+      results,
+      'Page Data Fetch',
+      projectObjs.map(obj => `Scan ${obj.scanId}, Run ${obj.runNumber}`)
+    );
+  
     return results;
   }
 
-  async getIssuesOfProject(scanId, runId, page = 1) {
-    const data = {
-      url: `/v1/scans/${scanId}/runs/${runId}/issues`,
-      method: "get",
-      params: {
-        status: "open",
-      },
-      headers: {
-        "X-Pagination-Per-Page": IssuesPerRequest,
-        "X-Pagination-Page": page,
-      },
-    };
+  async getIssuesOfProject(scanId, runNumber, page) {
+    try {
+      const data = {
+        method: "get",
+        url: `/v1/scans/${scanId}/runs/${runNumber}/issues`,
+        headers: {
+          "X-Pagination-Per-Page": IssuesPerRequest,
+          "X-Pagination-Page": page,
+        },
+      };
+      const response = await this.retryAxios(data);
 
-    const response = await axios(data, { httpsAgent: agent });
-    return {
-      issues: response.data.issues,
-      hasNext: response.headers["x-pagination-has-next"] === "true",
-    };
+      return {
+        issues: response.data.issues || [],
+        hasNext: response.headers["x-pagination-has-next"] === "true",
+      };
+    } catch (error) {
+      throw new Error(
+        `Failed to fetch issues for scan ${scanId}, run ${runNumber}, page ${page}: ${error.message}`
+      );
+    }
   }
 
-  delay(ms) {
-    return new Promise((resolve) => setTimeout(resolve, ms));
+  delay = (ms) => new Promise((res) => setTimeout(res, ms));
+
+  throttledAxios = async (config) => {
+    const now = Date.now();
+    if (now - this.requestStartTime >= RATE_LIMIT.HOUR_IN_MS) {
+      this.requestCount = 0;
+      this.requestStartTime = now;
+    }
+
+    if (this.requestCount >= RATE_LIMIT.REQUESTS_PER_HOUR) {
+      const waitTime = RATE_LIMIT.HOUR_IN_MS - (now - this.requestStartTime);
+      console.warn(
+        `⚠️ Hourly limit reached. Waiting ${Math.ceil(waitTime / 1000)} seconds...`
+      );
+      await this.delay(waitTime);
+      this.requestCount = 0;
+      this.requestStartTime = Date.now();
+    }
+
+    await this.delay(RATE_LIMIT.THROTTLE_DELAY_MS);
+    this.requestCount++;
+    return axios({ ...config, httpsAgent: agent });
+  };
+
+  retryAxios = async (
+    axiosConfig,
+    retries = RATE_LIMIT.DEFAULT_RETRIES,
+    baseDelay = RATE_LIMIT.BASE_RETRY_DELAY_MS
+  ) => {
+    for (let i = 0; i < retries; i++) {
+      try {
+        return await this.throttledAxios(axiosConfig);
+      } catch (err) {
+        const status = err?.response?.status;
+        if (status === 429 || status === 503 || !status) {
+          const wait = baseDelay * Math.pow(2, i);
+          console.warn(
+            `⚠️ ${status || "Network"} error. Retrying in ${wait} ms...`
+          );
+          await this.delay(wait);
+        } else {
+          throw err;
+        }
+      }
+    }
+    throw new Error(
+      `❌ Failed after ${retries} retries: ${axiosConfig.url}`
+    );
+  };
+
+  generateJSON(data, fileName = "defaultName.json") {
+    return new Promise((resolve, reject) => {
+      try {
+        const jsonData = JSON.stringify(data, null, 2);
+        fs.writeFileSync(fileName, jsonData);
+        resolve();
+      } catch (error) {
+        console.error(`Error writing JSON to file ${fileName}: ${error}`);
+        reject(error);
+      }
+    });
   }
 
   //generate excel with given JS object
   generateExcel(data, fileName = "defaultName.xlsx") {
     return new Promise((resolve, reject) => {
       try {
-        const ws = xlsx.utils.json_to_sheet(data);
+        // Truncate long text values to prevent Excel cell limit error
+        const MAX_CELL_LENGTH = 32000; // Leave some buffer below 32767
+      
+        const processedData = data.map(row => {
+          const processedRow = {};
+          for (const [key, value] of Object.entries(row)) {
+            let cellValue = value;
+
+            // Convert to string and check length
+            if (typeof cellValue === 'string' && cellValue.length > MAX_CELL_LENGTH) {
+              cellValue = cellValue.substring(0, MAX_CELL_LENGTH) + '... [TRUNCATED]';
+            } else if (cellValue && typeof cellValue === 'object') {
+              // Handle objects by stringifying and truncating if needed
+              cellValue = JSON.stringify(cellValue);
+              if (cellValue.length > MAX_CELL_LENGTH) {
+                cellValue = cellValue.substring(0, MAX_CELL_LENGTH) + '... [TRUNCATED]';
+              }
+            }
+
+            processedRow[key] = cellValue;
+          }
+          return processedRow;
+        });
+
+        const ws = xlsx.utils.json_to_sheet(processedData);
         const wb = xlsx.utils.book_new();
         xlsx.utils.book_append_sheet(wb, ws, "Sheet1");
 
-        const header = Object.keys(data[0] || {});
+        const header = Object.keys(processedData[0] || {});
         ws["!cols"] = header.map((headerText) => ({
-          wch: headerText.length + 2,
+          wch: Math.min(headerText.length + 2, 50), // Limit column width to 50
         }));
 
         xlsx.writeFile(wb, fileName);
@@ -224,6 +321,28 @@ class Utils {
         reject(error);
       }
     });
+  }
+
+   // helper function to log unfullfilled promises
+  logSettledResults(results, operation, identifiers = []) {
+    const fulfilled = results.filter(r => r.status === "fulfilled");
+    const rejected = results.filter(r => r.status === "rejected");
+
+    if (rejected.length > 0) {
+      console.error(`\n❌ ${operation} - Failed: ${rejected.length}/${results.length}`);
+      rejected.forEach((result, index) => {
+        const identifier = identifiers[results.indexOf(result)] || `Item ${index + 1}`;
+        console.error(`  • ${identifier}: ${result.reason}`);
+      });
+      console.error(''); // Empty line for readability
+    }
+
+    return {
+      fulfilled: fulfilled.map(r => r.value),
+      rejected,
+      successCount: fulfilled.length,
+      failureCount: rejected.length
+    };
   }
 }
 

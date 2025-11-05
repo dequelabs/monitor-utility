@@ -4,9 +4,9 @@ const cliProgress = require("./progressbar");
 
 const utilClassInstance = require("./utils");
 
-const { getScanDetails, generateExcel, delay } = utilClassInstance;
+const { getScanDetails, generateExcel, delay, generateJSON } = utilClassInstance;
 
-const limit = plimit(3);
+const limit = plimit(2);
 
 module.exports = async ({ url }) => {
   const results = [];
@@ -77,6 +77,8 @@ module.exports = async ({ url }) => {
             bar.increment();
           }
         }
+
+        await delay(200); // Small delay to avoid overwhelming the server
       })
     );
 
@@ -101,6 +103,12 @@ module.exports = async ({ url }) => {
 
     results.sort((a, b) => a["Project ID"] - b["Project ID"]);
 
+    await generateJSON(
+      results,
+      `scans-${Date.now()}.json`
+    );
+
+    // Generate Excel file
     await generateExcel(results, `scans-${Date.now()}.xlsx`);
 
     console.log(`Excel file generated successfully! 🎉

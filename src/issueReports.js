@@ -10,7 +10,7 @@ module.exports = async (answers) => {
 
   let projectids = projectid.split(",").map((id) => parseInt(id));
 
-  const { allAvailableProjects, getIssuesOfProject, generateExcel, delay } =
+  const { allAvailableProjects, getIssuesOfProject, generateExcel, generateJSON } =
     utilClassInstance;
 
   // Validate project IDs
@@ -162,6 +162,11 @@ module.exports = async (answers) => {
     );
 
     await Promise.allSettled(projectIssuesPromises);
+
+    await generateJSON(
+      results,
+      `Issues-${Date.now()}.json`
+    );
 
     // Generate Excel file
     await generateExcel(results, `Issues-${Date.now()}.xlsx`);

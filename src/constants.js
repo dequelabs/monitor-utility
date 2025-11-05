@@ -12,6 +12,7 @@ const ViolationCategory = {
   "NAME-ROLE-VALUE": 0,
   OTHER: 0,
   PARSING: 0,
+  PDF: 0,
   PDFWCAG: 0,
   SEMANTICS: 0,
   "SENSORY-AND-VISUAL-CUES": 0,
@@ -28,4 +29,11 @@ module.exports = {
   PagesPerRequest,
   IssuesPerRequest,
   ViolationCategory,
+  RATE_LIMIT: {
+    REQUESTS_PER_HOUR: 950,
+    HOUR_IN_MS: 3600000,
+    THROTTLE_DELAY_MS: 200,
+    DEFAULT_RETRIES: 5,
+    BASE_RETRY_DELAY_MS: 1000
+  }
 };
