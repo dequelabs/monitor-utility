@@ -10,17 +10,18 @@ module.exports = async (answers) => {
 
   let projectids = projectid.split(",").map((id) => parseInt(id));
 
-  const { allAvailableProjects, getPagesData, generateExcel, delay } =
+  const { allAvailableProjects, getPagesData, generateExcel, generateJSON } =
     utilClassInstance;
 
-  // Validate project IDs
+  // Validate project IDs (store messages for later logging)
+  const validationMessages = [];
   projectids.forEach((id) => {
     if (isNaN(id)) {
-      console.log(`Invalid project ID: ${id} 👾`);
+      validationMessages.push(`Invalid project ID: ${id} 👾`);
     } else if (
       allAvailableProjects.findIndex((project) => project.id === id) === -1
     ) {
-      console.log(
+      validationMessages.push(
         `Project with ID ${id} is not available or inaccessible. Ignoring it. 🫠`
       );
     }
@@ -70,7 +71,15 @@ module.exports = async (answers) => {
     const progressBar = new cliProgress(totalPages, {
       message: "Downloading Pages:",
       width: 40,
-      showCount: true
+      showCount: true,
+    });
+
+    // Set the progress bar reference in utils for proper logging
+    utilClassInstance.setProgressBar(progressBar);
+
+    // Log any validation messages now that we have a progress bar
+    validationMessages.forEach(message => {
+      progressBar.log(message, 'warn');
     });
 
     // Fetch pages for each project
@@ -97,6 +106,8 @@ module.exports = async (answers) => {
             }
           } catch (error) {
             errors.push({ scanId, error: error.message || error });
+            const errorMessage = `Error fetching pages for scan ${scanId}: ${error.message || error}`;
+            progressBar.log(errorMessage, 'error');
           }
 
           results = results.concat(
@@ -122,12 +133,11 @@ module.exports = async (answers) => {
                 status,
                 ...pageMeta
               }) => ({
-                "Project Id": scanId,
-                "Project Name": projectNames[scanId],
+                "Scan Id": scanId,
+                "Scan Name": projectNames[scanId],
                 "Page Id": pageId,
                 "Test URL": testUrl,
                 "Page Title": testPageTitle,
-                "Reason for Failure": reasonForFailure,
                 "Critical Issues": totalCriticalIssues,
                 "Serious Issues": totalSeriousIssues,
                 "Moderate Issues": totalModerateIssues,
@@ -150,6 +160,14 @@ module.exports = async (answers) => {
     );
 
     await Promise.allSettled(projectPromises);
+
+    // Finish the progress bar
+    progressBar.finish();
+
+    await generateJSON(
+      results,
+      `pages-${Date.now()}.json`
+    );
 
     // Generate Excel file
     await generateExcel(results, `pages-${Date.now()}.xlsx`);

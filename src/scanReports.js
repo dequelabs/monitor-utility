@@ -4,13 +4,11 @@ const cliProgress = require("./progressbar");
 
 const utilClassInstance = require("./utils");
 
-const { getScanDetails, generateExcel, delay } =
-  utilClassInstance;
+const { getScanDetails, generateExcel, delay, generateJSON } = utilClassInstance;
 
-const limit = plimit(3);
+const limit = plimit(2);
 
-module.exports = async (answers) => {
-
+module.exports = async ({ url }) => {
   const results = [];
 
   try {
@@ -28,6 +26,9 @@ module.exports = async (answers) => {
       message: "Downloading Scans:",
     });
 
+    // Set the progress bar reference in utils for proper logging
+    utilClassInstance.setProgressBar(bar);
+
     //collect errors from all promises
     const errors = [];
 
@@ -40,13 +41,22 @@ module.exports = async (answers) => {
         let retries = 3;
         while (retries > 0) {
           try {
-            let { projectId, completedAt, ...scanDetails } = await getScanDetails(scanId);
+            let {
+              projectId,
+              completedAt,
+              axeVersion,
+              standard,
+              ...scanDetails
+            } = await getScanDetails(scanId);
             results.push({
               "Project ID": scanId,
               "Project Name": name,
+              "Project URL": `${url}/monitor/scans/${scanId}`,
               Groups: groupsNameString,
               ...scanDetails,
-              "Completed At": completedAt
+              "Axe Version": axeVersion,
+              Standard: standard,
+              "Completed At": completedAt,
             });
             break;
           } catch (error) {
@@ -55,7 +65,12 @@ module.exports = async (answers) => {
               error.response.status === 429 &&
               retries > 0
             ) {
-              console.warn(`Rate limit hit for scan ID ${scanId}. Retrying...`);
+              const message = `Rate limit hit for scan ID ${scanId}. Retrying...`;
+              if (bar && typeof bar.log === 'function') {
+                bar.log(message, 'warn');
+              } else {
+                console.warn(message);
+              }
               await delay(1000 * (4 - retries));
               retries--;
             } else {
@@ -70,10 +85,15 @@ module.exports = async (answers) => {
             bar.increment();
           }
         }
+
+        await delay(200); // Small delay to avoid overwhelming the server
       })
     );
 
     await Promise.allSettled(scanPromises);
+
+    // Finish the progress bar
+    bar.finish();
 
     if (errors.length > 0) {
       console.log(`
@@ -92,6 +112,14 @@ module.exports = async (answers) => {
       `);
     }
 
+    results.sort((a, b) => a["Project ID"] - b["Project ID"]);
+
+    await generateJSON(
+      results,
+      `scans-${Date.now()}.json`
+    );
+
+    // Generate Excel file
     await generateExcel(results, `scans-${Date.now()}.xlsx`);
 
     console.log(`Excel file generated successfully! 🎉

@@ -6,21 +6,22 @@ const utilClassInstance = require("./utils");
 const limit = plimit(4);
 
 module.exports = async (answers) => {
-  let { projectid } = answers;
+  let { projectid, includeNeedsReview } = answers;
 
   let projectids = projectid.split(",").map((id) => parseInt(id));
 
-  const { allAvailableProjects, getIssuesOfProject, generateExcel, delay } =
+  const { allAvailableProjects, getIssuesOfProject, generateExcel, generateJSON } =
     utilClassInstance;
 
-  // Validate project IDs
+  // Validate project IDs (store messages for later logging)
+  const validationMessages = [];
   projectids.forEach((id) => {
     if (isNaN(id)) {
-      console.log(`Invalid project ID: ${id} 👾`);
+      validationMessages.push(`Invalid project ID: ${id} 👾`);
     } else if (
       allAvailableProjects.findIndex((project) => project.id === id) === -1
     ) {
-      console.log(
+      validationMessages.push(
         `Project with ID ${id} is not available or inaccessible. Ignoring it. 🫠`
       );
     }
@@ -51,7 +52,10 @@ module.exports = async (answers) => {
   try {
     // Fetch scan details for selected projects
     let scanDetailsOfSelectedProjects =
-      await utilClassInstance.getMultipleScanDetails(projectids);
+      await utilClassInstance.getMultipleScanDetails(
+        projectids,
+        includeNeedsReview
+      );
 
     scanDetailsOfSelectedProjects = scanDetailsOfSelectedProjects.map(
       (scan) => ({
@@ -70,7 +74,15 @@ module.exports = async (answers) => {
     const progressBar = new cliProgress(totalIssues, {
       message: "Downloading Issues:",
       width: 40,
-      showCount: true
+      showCount: true,
+    });
+
+    // Set the progress bar reference in utils for proper logging
+    utilClassInstance.setProgressBar(progressBar);
+
+    // Log any validation messages now that we have a progress bar
+    validationMessages.forEach(message => {
+      progressBar.log(message, 'warn');
     });
 
     // Fetch pages for each project
@@ -91,14 +103,22 @@ module.exports = async (answers) => {
                 page++;
               }
 
-              let needReviewFalseIssues = issuesData.filter(issue => issue.needsReview === false);
+              let userPrefferedIssues = issuesData;
 
-              projectIssues = projectIssues.concat(needReviewFalseIssues);
+              if (!includeNeedsReview) {
+                userPrefferedIssues = issuesData.filter(
+                  (issue) => issue.needsReview === false
+                );
+              }
 
-              progressBar.increment(needReviewFalseIssues.length);
+              projectIssues = projectIssues.concat(userPrefferedIssues);
+
+              progressBar.increment(userPrefferedIssues.length);
             }
           } catch (error) {
             errors.push({ scanId, error: error.message || error });
+            const errorMessage = `Error fetching issues for scan ${scanId}: ${error.message || error}`;
+            progressBar.log(errorMessage, 'error');
           }
 
           results = results.concat(
@@ -124,8 +144,8 @@ module.exports = async (answers) => {
                 testUrl,
                 testPageTitle,
               }) => ({
-                "Project Id": scanId,
-                "Project Name": projectNames[scanId],
+                "Scan Id": scanId,
+                "Scan Name": projectNames[scanId],
                 "Issue Id": issueId,
                 "Rule Id": ruleId,
                 Description: description,
@@ -134,16 +154,17 @@ module.exports = async (answers) => {
                 Impact: impact,
                 "Issue Group": issueGrouping,
                 "Is Experimental": isExperimental,
+                ...(includeNeedsReview ? { "Needs Review": needsReview } : {}),
                 "Is Manual": isManual,
                 Summary: summary,
-                Selector: selector,
+                Selector: selector[0],
                 "Source Code": source,
                 Tags: tags.join(", "),
                 IGT: igt,
                 "Test Name": testName,
                 "Test Url": testUrl,
                 "Test Page Title": testPageTitle,
-                "Created-At": createdAt
+                "Created-At": createdAt,
               })
             )
           );
@@ -152,6 +173,14 @@ module.exports = async (answers) => {
     );
 
     await Promise.allSettled(projectIssuesPromises);
+
+    // Finish the progress bar
+    progressBar.finish();
+
+    await generateJSON(
+      results,
+      `Issues-${Date.now()}.json`
+    );
 
     // Generate Excel file
     await generateExcel(results, `Issues-${Date.now()}.xlsx`);

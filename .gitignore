@@ -10,3 +10,5 @@ monthly.json
 *.xlsx
 *.csv
 issues*.json
+scan*.json
+pages*.json
