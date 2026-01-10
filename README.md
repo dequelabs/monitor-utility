@@ -1,5 +1,5 @@
 # Branch Details:
-If your axe-Monitor instance version >=8.1 , then clone the branch name " https://github.com/dequelabs/monitor-utility/tree/main-8.1".  
+If your axe-Monitor instance version >=8.0 , then clone the branch name " https://github.com/dequelabs/monitor-utility/tree/main-8.1".  
 Else clone the **main** branch
 
 # Monitor Utility
@@ -10,7 +10,11 @@ Automatically fetches data from monthly Monitor scans and generates an Excel fil
 
 You will need access to the Monitor instance you want to use, including projects and scans within the organization.
 First step is to install the dependent packages by executing 'npm install' from the root of the project code.
-To run the code, from the root run `npm run report`. Enter the Monitor URL, making sure it does not end with a slash. Login with your email and password when prompted.
+To run the utility-tool, from the root execute the command `npm run report`, and then enter the following entry when prompted.
+1. If monitor version is less tha 8.0 , then Enter the Monitor URL, making sure it does not end with a slash. Login with your email and password when prompted.
+2. If monitor version is >=8.0,  Enter the Monitor URL, and Monitor api key, when prompted.
+   <img width="1169" height="258" alt="image" src="https://github.com/user-attachments/assets/bab0cca6-d353-4044-9267-e7a906a8dd97" />
+
 
 ## Code Design
 
