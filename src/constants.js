@@ -30,8 +30,6 @@ module.exports = {
   IssuesPerRequest,
   ViolationCategory,
   RATE_LIMIT: {
-    REQUESTS_PER_HOUR: 950,
-    HOUR_IN_MS: 3600000,
     THROTTLE_DELAY_MS: 200,
     DEFAULT_RETRIES: 5,
     BASE_RETRY_DELAY_MS: 1000
