@@ -6,32 +6,49 @@ const utilClassInstance = require("./utils");
 const limit = plimit(4);
 
 module.exports = async (answers) => {
-  let { projectid, includeNeedsReview } = answers;
-
-  let projectids = projectid.split(",").map((id) => parseInt(id));
+  let { projectid, includeNeedsReview, scanGroups } = answers;
 
   const { allAvailableProjects, getIssuesOfProject, generateExcel, generateJSON } =
     utilClassInstance;
 
-  // Validate project IDs (store messages for later logging)
-  const validationMessages = [];
-  projectids.forEach((id) => {
-    if (isNaN(id)) {
-      validationMessages.push(`Invalid project ID: ${id} 👾`);
-    } else if (
-      allAvailableProjects.findIndex((project) => project.id === id) === -1
-    ) {
-      validationMessages.push(
-        `Project with ID ${id} is not available or inaccessible. Ignoring it. 🫠`
-      );
-    }
-  });
+  // Apply scan group filter
+  let filteredProjects = allAvailableProjects;
+  if (scanGroups && scanGroups.trim().toLowerCase() !== "all") {
+    const filterGroups = scanGroups.split(",").map((g) => g.trim().toLowerCase());
+    filteredProjects = allAvailableProjects.filter(
+      (scan) =>
+        scan.groups &&
+        scan.groups.some((g) => filterGroups.includes(g.name.toLowerCase()))
+    );
+  }
 
-  projectids = projectids.filter(
-    (id) =>
-      !isNaN(id) &&
-      allAvailableProjects.findIndex((project) => project.id === id) !== -1
-  );
+  // Resolve project IDs: "All" uses every project in the filtered set
+  let projectids;
+  const validationMessages = [];
+
+  if (!projectid || projectid.trim().toLowerCase() === "all") {
+    projectids = filteredProjects.map((p) => p.id);
+  } else {
+    projectids = projectid.split(",").map((id) => parseInt(id));
+
+    projectids.forEach((id) => {
+      if (isNaN(id)) {
+        validationMessages.push(`Invalid project ID: ${id} 👾`);
+      } else if (
+        allAvailableProjects.findIndex((project) => project.id === id) === -1
+      ) {
+        validationMessages.push(
+          `Project with ID ${id} is not available or inaccessible. Ignoring it. 🫠`
+        );
+      }
+    });
+
+    projectids = projectids.filter(
+      (id) =>
+        !isNaN(id) &&
+        allAvailableProjects.findIndex((project) => project.id === id) !== -1
+    );
+  }
 
   if (projectids.length === 0) {
     console.log("No valid project IDs provided. Exiting... 👋");

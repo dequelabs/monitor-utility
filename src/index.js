@@ -22,7 +22,7 @@ inquirer
         return new Promise((resolve, reject) => {
           if (
             /(https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9]+\.[^\s]{2,}|www\.[a-zA-Z0-9]+\.[^\s]{2,})/.test(
-              input
+              input,
             )
           ) {
             resolve(true);
@@ -62,14 +62,18 @@ inquirer
     },
     {
       type: "input",
+      name: "scanGroups",
+      message:
+        "Filter by Scan Group(s)? Enter Scan group names separated by commas, or press Enter for All:",
+      default: "All",
+    },
+    {
+      type: "input",
       name: "projectid",
       message:
-        "List all Scan Id(s) for which  you'd like to export, separated by a comma (i.e. 24,15,215). Scan Id can be found in your Axe Monitor URL (Example URL https://axemonitor.dequecloud.com/monitor/scans/16 with 16 being the Scan ID).",
-      when: (answers) => {
-        if (answers.path === "issues" || answers.path === "pages") {
-          return true;
-        }
-      },
+        "Filter by Scan ID(s)? Enter IDs separated by commas (e.g. 24,15,215), or press Enter for All. Scan ID can be found in your Axe Monitor URL (e.g. https://axemonitor.dequecloud.com/monitor/scans/16, where 16 is the Scan ID).",
+      default: "All",
+      when: (answers) => answers.path === "issues" || answers.path === "pages",
     },
     {
       type: "list",
