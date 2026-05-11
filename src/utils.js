@@ -27,8 +27,6 @@ class Utils {
     this.getMultipleScanDetails = this.getMultipleScanDetails.bind(this);
     this.getPagesData = this.getPagesData.bind(this);
     this.getIssuesOfProject = this.getIssuesOfProject.bind(this);
-    this.requestCount = 0;
-    this.requestStartTime = Date.now();
     this.progressBar = null;
   }
 
@@ -229,29 +227,7 @@ class Utils {
   delay = (ms) => new Promise((res) => setTimeout(res, ms));
 
   throttledAxios = async (config) => {
-    const now = Date.now();
-    if (now - this.requestStartTime >= RATE_LIMIT.HOUR_IN_MS) {
-      this.requestCount = 0;
-      this.requestStartTime = now;
-    }
-
-    if (this.requestCount >= RATE_LIMIT.REQUESTS_PER_HOUR) {
-      const waitTime = RATE_LIMIT.HOUR_IN_MS - (now - this.requestStartTime);
-      const message = `⚠️ Hourly limit reached. Waiting ${Math.ceil(waitTime / 1000)} seconds...`;
-      
-      if (this.progressBar && typeof this.progressBar.log === 'function') {
-        this.progressBar.log(message, 'warn');
-      } else {
-        console.warn(message);
-      }
-      
-      await this.delay(waitTime);
-      this.requestCount = 0;
-      this.requestStartTime = Date.now();
-    }
-
     await this.delay(RATE_LIMIT.THROTTLE_DELAY_MS);
-    this.requestCount++;
     return axios({ ...config, httpsAgent: agent });
   };
 

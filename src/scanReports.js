@@ -8,12 +8,21 @@ const { getScanDetails, generateExcel, delay, generateJSON } = utilClassInstance
 
 const limit = plimit(2);
 
-module.exports = async ({ url }) => {
+module.exports = async ({ url, scanGroups }) => {
   const results = [];
 
   try {
     //allScans:[{id:Int, name: String, group:[String]}] = [{id: 1, name: 'https://www.example.com', group:[]},...];
     let allScans = utilClassInstance.allAvailableProjects;
+
+    if (scanGroups && scanGroups.trim().toLowerCase() !== "all") {
+      const filterGroups = scanGroups.split(",").map((g) => g.trim().toLowerCase());
+      allScans = allScans.filter(
+        (scan) =>
+          scan.groups &&
+          scan.groups.some((g) => filterGroups.includes(g.name.toLowerCase()))
+      );
+    }
 
     if (allScans.length === 0) {
       console.log("No projects found. Exiting... 👋");
