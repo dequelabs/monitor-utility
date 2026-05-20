@@ -16,7 +16,7 @@ module.exports = async ({ url, scanGroups }) => {
     let allScans = utilClassInstance.allAvailableProjects;
 
     if (scanGroups && scanGroups.trim().toLowerCase() !== "all") {
-      const filterGroups = scanGroups.split(",").map((g) => g.trim().toLowerCase());
+      const filterGroups = scanGroups.split(";").map((g) => g.trim().toLowerCase());
       allScans = allScans.filter(
         (scan) =>
           scan.groups &&

@@ -64,7 +64,7 @@ inquirer
       type: "input",
       name: "scanGroups",
       message:
-        "Filter by Scan Group(s)? Enter Scan group names separated by commas, or press Enter for All:",
+        "Filter by Scan Group(s)? Enter Scan group names separated by semicolons, or press Enter for All:",
       default: "All",
     },
     {
