@@ -14,7 +14,7 @@ module.exports = async (answers) => {
   // Apply scan group filter
   let filteredProjects = allAvailableProjects;
   if (scanGroups && scanGroups.trim().toLowerCase() !== "all") {
-    const filterGroups = scanGroups.split(",").map((g) => g.trim().toLowerCase());
+    const filterGroups = scanGroups.split(";").map((g) => g.trim().toLowerCase());
     filteredProjects = allAvailableProjects.filter(
       (scan) =>
         scan.groups &&
