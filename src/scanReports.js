@@ -53,6 +53,7 @@ module.exports = async ({ url, scanGroups }) => {
             let {
               projectId,
               completedAt,
+              allPages,
               axeVersion,
               standard,
               ...scanDetails

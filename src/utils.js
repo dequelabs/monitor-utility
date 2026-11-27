@@ -105,21 +105,18 @@ class Utils {
       ...moreInfo
     } = response.data.scanRuns[0];
 
-    if (status !== "Completed") {
-      return Promise.reject(
-        `Scan with id ${scanId} is not completed yet. It's status is ${status} and hence ignored for now.`
-      );
-    }
-
     let {
       critical: criticalIssues = 0,
       serious: seriousIssues = 0,
       moderate: moderateIssues = 0,
       minor: minorIssues = 0,
       total: totalIssues = 0,
-    } = issues;
-    let { critical: criticalPages = 0, completed: totalPages = 0 } =
-      pages || {};
+    } = issues || {};
+    let {
+      critical: criticalPages = 0,
+      completed: completedPages = 0,
+      total: allPages = completedPages,
+    } = pages || {};
     // Build violations object with page counts, merged with ViolationCategory, and sorted by key
     let violations = Object.fromEntries(
       Object.entries({
@@ -136,18 +133,19 @@ class Utils {
     let result = {
       projectId: scanId,
       "Run-Number": runNumber,
-      Score: Math.round(score * 10000) / 100,
+      Status: status,
+      Score: typeof score === "number" ? Math.round(score * 10000) / 100 : null,
       "Critical Issues": criticalIssues,
       "Serious Issues": seriousIssues,
       "Moderate Issues": moderateIssues,
       "Minor Issues": minorIssues,
       "All Issues": totalIssues,
       "Critical Pages": criticalPages,
-      "Completed Pages": totalPages,
+      "Completed Pages": completedPages,
       ...moreInfo,
       ...violations,
     };
-    return Promise.resolve({ ...result, completedAt });
+    return Promise.resolve({ ...result, completedAt, allPages });
   }
 
   async getMultipleScanDetails(scanIds = [], needsReview = false) {
@@ -169,9 +167,6 @@ class Utils {
     const data = {
       url: `/v1/scans/${scanId}/runs/${runId}/pages`,
       method: "get",
-      params: {
-        status: "Completed",
-      },
       headers: {
         "X-Pagination-Per-Page": PagesPerRequest,
         "X-Pagination-Page": page,

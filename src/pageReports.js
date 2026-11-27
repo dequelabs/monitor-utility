@@ -75,7 +75,7 @@ module.exports = async (answers) => {
       (scan) => ({
         scanId: scan.projectId,
         runNumber: scan["Run-Number"],
-        totalPages: scan["Completed Pages"],
+        totalPages: scan.allPages,
       })
     );
 
@@ -155,6 +155,8 @@ module.exports = async (answers) => {
                 "Page Id": pageId,
                 "Test URL": testUrl,
                 "Page Title": testPageTitle,
+                Status: status,
+                "Reason For Failure": reasonForFailure,
                 "Critical Issues": totalCriticalIssues,
                 "Serious Issues": totalSeriousIssues,
                 "Moderate Issues": totalModerateIssues,
